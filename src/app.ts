@@ -76,6 +76,10 @@ class App {
         },
       });
     });
+    
+    this.app.get('/demo', (req: Request, res: Response) => {
+      res.sendFile(path.resolve(__dirname, '../public/index.html'));
+    });
 
     this.app.get('/health', (req: Request, res: Response) => {
       res.status(200).json({
