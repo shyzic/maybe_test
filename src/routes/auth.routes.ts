@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import AuthController from '../controllers/AuthController';
 import { authenticate } from '../middleware/auth';
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateFields } from '../middleware/validation';
 
 const router = Router();
 
@@ -36,7 +36,12 @@ const router = Router();
  *       400:
  *         description: Validation error
  */
-router.post('/register', validateBody, AuthController.register);
+router.post(
+  '/register',
+  validateBody,
+  validateFields(['username', 'password']),
+  AuthController.register
+);
 
 /**
  * @swagger
@@ -64,7 +69,12 @@ router.post('/register', validateBody, AuthController.register);
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', validateBody, AuthController.login);
+router.post(
+  '/login',
+  validateBody,
+  validateFields(['username', 'password']),
+  AuthController.login
+);
 
 /**
  * @swagger

@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
+  # MongoDB с поддержкой транзакций (replica set)
   mongodb:
     image: mongo:7
     container_name: auction-mongodb
@@ -14,11 +14,34 @@ services:
       - mongodb_data:/data/db
     networks:
       - auction-network
+    command: ["--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/auction --quiet
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # MongoDB replica set initialization
+  mongodb-setup:
+    image: mongo:7
+    container_name: auction-mongodb-setup
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - auction-network
+    command: >
+      bash -c "
+        sleep 5 &&
+        mongosh --host mongodb:27017 --eval '
+          rs.initiate({
+            _id: \"rs0\",
+            members: [{ _id: 0, host: \"mongodb:27017\" }]
+          })
+        ' &&
+        echo 'MongoDB replica set initialized'
+      "
+    restart: "no"
 
   # Redis Cache & Queue
   redis:
@@ -26,7 +49,7 @@ services:
     container_name: auction-redis
     restart: unless-stopped
     ports:
-      - '63790:6379'
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -49,13 +72,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: mongodb://mongodb:27017/auction
+      MONGODB_URI: mongodb://mongodb:27017/auction?replicaSet=rs0
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
     depends_on:
       mongodb:
         condition: service_healthy
+      mongodb-setup:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     networks:

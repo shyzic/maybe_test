@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auction System Demo</title>
+  <title>Auction System</title>
   <style>
     * {
       margin: 0;
@@ -69,15 +69,11 @@
     .card p {
       color: #888;
       font-size: 14px;
-      line-height: 1.5;
     }
 
     .panel {
       display: none;
       margin-top: 40px;
-      background: #111;
-      border: 1px solid #222;
-      padding: 40px;
     }
 
     .panel.active {
@@ -95,17 +91,16 @@
       color: #888;
     }
 
-    input, textarea, select {
+    input, select {
       width: 100%;
       padding: 12px;
-      background: #000;
+      background: #111;
       border: 1px solid #333;
       color: #fff;
       font-size: 14px;
-      font-family: inherit;
     }
 
-    input:focus, textarea:focus, select:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #fff;
     }
@@ -125,33 +120,6 @@
       background: #ddd;
     }
 
-    button:disabled {
-      background: #333;
-      color: #666;
-      cursor: not-allowed;
-    }
-
-    .response {
-      margin-top: 20px;
-      padding: 20px;
-      background: #000;
-      border: 1px solid #333;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .success {
-      border-color: #0f0;
-      color: #0f0;
-    }
-
-    .error {
-      border-color: #f00;
-      color: #f00;
-    }
-
     .back-btn {
       background: #222;
       color: #fff;
@@ -162,71 +130,239 @@
       background: #333;
     }
 
+    /* Real-time Leaderboard */
+    .leaderboard {
+      margin-top: 30px;
+      background: #111;
+      border: 1px solid #222;
+      padding: 20px;
+    }
+
+    .leaderboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+
+    .leaderboard-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: #0f0;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      margin-bottom: 10px;
+      background: #000;
+      border: 1px solid #222;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .leaderboard-item.winning {
+      border-color: #0f0;
+      background: rgba(0, 255, 0, 0.05);
+    }
+
+    .leaderboard-item.new-bid {
+      animation: highlight 0.5s ease-out;
+    }
+
+    @keyframes highlight {
+      0% { background: rgba(255, 255, 255, 0.2); }
+      100% { background: #000; }
+    }
+
+    .position {
+      width: 40px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #888;
+    }
+
+    .position.winning {
+      color: #0f0;
+    }
+
+    .user-info {
+      flex: 1;
+      margin-left: 20px;
+    }
+
+    .username {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .bid-time {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .bid-amount {
+      font-size: 18px;
+      font-weight: 600;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    /* Stats */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
       margin-top: 20px;
     }
 
     .stat {
-      background: #000;
-      border: 1px solid #333;
+      background: #111;
+      border: 1px solid #222;
       padding: 20px;
       text-align: center;
     }
 
     .stat-value {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 600;
       margin-bottom: 5px;
     }
 
     .stat-label {
       color: #888;
-      font-size: 12px;
-    }
-
-    .table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-
-    .table th,
-    .table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #222;
-    }
-
-    .table th {
-      color: #888;
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    .table td {
-      font-size: 14px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      background: #222;
       font-size: 11px;
-      border-radius: 2px;
     }
 
-    .badge.active {
-      background: #0f0;
-      color: #000;
+    /* Simulation Presets */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
     }
 
-    .loading {
-      text-align: center;
-      padding: 40px;
+    .preset-card {
+      background: #111;
+      border: 1px solid #333;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-card:hover {
+      border-color: #fff;
+    }
+
+    .preset-card.selected {
+      border-color: #0f0;
+      background: rgba(0, 255, 0, 0.05);
+    }
+
+    .preset-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .preset-desc {
+      font-size: 11px;
       color: #888;
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+      margin-top: 20px;
+      background: #111;
+      border: 1px solid #222;
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #000;
+      border-left: 2px solid #333;
+      font-size: 12px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .activity-item.bid {
+      border-left-color: #fff;
+    }
+
+    .activity-item.win {
+      border-left-color: #0f0;
+    }
+
+    .activity-time {
+      color: #666;
+      font-size: 10px;
+    }
+
+    .response {
+      margin-top: 20px;
+      padding: 20px;
+      background: #000;
+      border: 1px solid #333;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .success { border-color: #0f0; color: #0f0; }
+    .error { border-color: #f00; color: #f00; }
+
+    .info-box {
+      background: #111;
+      border: 1px solid #333;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+
+    .copy-btn {
+      background: #333;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 11px;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -234,38 +370,28 @@
   <div class="container">
     <header>
       <h1>Auction System</h1>
-      <p class="subtitle">Backend API Testing Interface</p>
+      <p class="subtitle">Multi-Round Auction with Real-Time Updates</p>
     </header>
 
     <div id="main-menu" class="grid">
       <div class="card" onclick="showPanel('auth')">
         <h2>Authentication</h2>
-        <p>Register and login to get access token</p>
+        <p>Login to participate</p>
       </div>
 
       <div class="card" onclick="showPanel('auctions')">
         <h2>Auctions</h2>
-        <p>Create and manage multi-round auctions</p>
-      </div>
-
-      <div class="card" onclick="showPanel('bids')">
-        <h2>Bidding</h2>
-        <p>Place and increase bids in active auctions</p>
+        <p>View and create auctions</p>
       </div>
 
       <div class="card" onclick="showPanel('simulator')">
-        <h2>Simulator</h2>
-        <p>Run automated auction simulation with bots</p>
+        <h2>Live Simulator</h2>
+        <p>Run advanced simulations</p>
       </div>
 
-      <div class="card" onclick="window.open('/api-docs', '_blank')">
-        <h2>API Documentation</h2>
-        <p>View complete API documentation</p>
-      </div>
-
-      <div class="card" onclick="showPanel('stats')">
-        <h2>System Stats</h2>
-        <p>View real-time system statistics</p>
+      <div class="card" onclick="showPanel('live')">
+        <h2>Live Auction</h2>
+        <p>Watch real-time bidding</p>
       </div>
     </div>
 
@@ -284,11 +410,6 @@
         <input type="password" id="auth-password" placeholder="password">
       </div>
 
-      <div class="form-group">
-        <label>Email (optional for register)</label>
-        <input type="email" id="auth-email" placeholder="email@example.com">
-      </div>
-
       <button onclick="register()">Register</button>
       <button onclick="login()" style="margin-left: 10px;">Login</button>
 
@@ -300,103 +421,110 @@
       <button class="back-btn" onclick="showMenu()">Back</button>
       <h2>Auctions</h2>
 
-      <button onclick="loadAuctions()">Load Auctions</button>
-      <button onclick="showCreateAuction()" style="margin-left: 10px;">Create New</button>
+      <button onclick="loadAuctions()">Refresh</button>
+      <button onclick="quickCreateAuction()" style="margin-left: 10px;">Quick Create (30s start)</button>
 
-      <div id="create-auction" style="display: none; margin-top: 20px;">
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" id="auction-name" placeholder="Premium NFT Collection">
-        </div>
-
-        <div class="form-group">
-          <label>Total Items</label>
-          <input type="number" id="auction-items" value="200">
-        </div>
-
-        <div class="form-group">
-          <label>Items Per Round</label>
-          <input type="number" id="auction-items-round" value="50">
-        </div>
-
-        <div class="form-group">
-          <label>Round Duration (seconds)</label>
-          <input type="number" id="auction-duration" value="600">
-        </div>
-
-        <div class="form-group">
-          <label>Min Bid</label>
-          <input type="number" id="auction-minbid" value="100">
-        </div>
-
-        <div class="form-group">
-          <label>Min Bid Step (%)</label>
-          <input type="number" id="auction-step" value="5">
-        </div>
-
-        <button onclick="createAuction()">Create Auction</button>
-      </div>
-
-      <div id="auctions-response"></div>
-    </div>
-
-    <!-- Bids Panel -->
-    <div id="bids" class="panel">
-      <button class="back-btn" onclick="showMenu()">Back</button>
-      <h2>Bidding</h2>
-
-      <div class="form-group">
-        <label>Auction ID</label>
-        <input type="text" id="bid-auction-id" placeholder="Paste auction ID">
-      </div>
-
-      <div class="form-group">
-        <label>Bid Amount</label>
-        <input type="number" id="bid-amount" placeholder="500">
-      </div>
-
-      <button onclick="placeBid()">Place Bid</button>
-      <button onclick="getMyBids()" style="margin-left: 10px;">My Bids</button>
-
-      <div id="bids-response"></div>
+      <div id="auctions-list"></div>
     </div>
 
     <!-- Simulator Panel -->
     <div id="simulator" class="panel">
       <button class="back-btn" onclick="showMenu()">Back</button>
-      <h2>Auction Simulator</h2>
+      <h2>Advanced Simulation</h2>
 
-      <div class="form-group">
-        <label>Number of Bots</label>
-        <input type="number" id="sim-bots" value="10">
+      <div class="info-box">
+        Choose a preset to demonstrate different auction scenarios
+      </div>
+
+      <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Simulation Presets</h3>
+      <div class="preset-grid">
+        <div class="preset-card" onclick="selectPreset('basic')">
+          <div class="preset-title">Basic Demo</div>
+          <div class="preset-desc">10 bots, steady bidding</div>
+        </div>
+        <div class="preset-card" onclick="selectPreset('anti-snipe')">
+          <div class="preset-title">Anti-Snipe Test</div>
+          <div class="preset-desc">Last-second bids simulation</div>
+        </div>
+        <div class="preset-card" onclick="selectPreset('high-volume')">
+          <div class="preset-title">High Volume</div>
+          <div class="preset-desc">30 bots, rapid bidding</div>
+        </div>
+        <div class="preset-card" onclick="selectPreset('competitive')">
+          <div class="preset-title">Competitive</div>
+          <div class="preset-desc">Aggressive bidders</div>
+        </div>
       </div>
 
       <div class="form-group">
-        <label>Bid Frequency (ms)</label>
-        <input type="number" id="sim-frequency" value="2000">
+        <label>Auction ID</label>
+        <input type="text" id="sim-auction-id" placeholder="Select from auctions">
+      </div>
+
+      <div class="form-group">
+        <label>Bots: <span id="bots-value">10</span></label>
+        <input type="range" id="sim-bots" min="5" max="50" value="10" oninput="updateBotsValue(this.value)">
+      </div>
+
+      <div class="form-group">
+        <label>Frequency (ms): <span id="freq-value">2000</span></label>
+        <input type="range" id="sim-frequency" min="500" max="5000" value="2000" step="100" oninput="updateFreqValue(this.value)">
       </div>
 
       <button onclick="startSimulation()">Start Simulation</button>
-      <button onclick="stopSimulation()" style="margin-left: 10px;">Stop</button>
+      <button onclick="stopSimulation()" style="margin-left: 10px; background: #333; color: #fff;">Stop</button>
 
-      <div id="simulator-response"></div>
+      <div id="simulator-stats"></div>
+      <div class="activity-feed" id="activity-feed"></div>
     </div>
 
-    <!-- Stats Panel -->
-    <div id="stats" class="panel">
+    <!-- Live Auction Panel -->
+    <div id="live" class="panel">
       <button class="back-btn" onclick="showMenu()">Back</button>
-      <h2>System Statistics</h2>
+      <h2>Live Auction</h2>
 
-      <button onclick="loadStats()">Refresh Stats</button>
+      <div class="form-group">
+        <label>Auction ID</label>
+        <input type="text" id="live-auction-id" placeholder="Enter auction ID">
+        <button onclick="connectToAuction()" style="margin-top: 10px;">Connect</button>
+      </div>
 
-      <div id="stats-response"></div>
+      <div class="leaderboard">
+        <div class="leaderboard-header">
+          <div class="leaderboard-title">Real-Time Leaderboard</div>
+          <div class="live-indicator">
+            <div class="pulse"></div>
+            <span>LIVE</span>
+          </div>
+        </div>
+        <div id="leaderboard-content">
+          <div style="text-align: center; color: #666; padding: 40px;">
+            Connect to an auction to see live updates
+          </div>
+        </div>
+      </div>
+
+      <div class="stats" id="live-stats"></div>
     </div>
   </div>
 
   <script>
     const API_URL = 'http://localhost:3000/api';
+    const WS_URL = 'ws://localhost:3000';
     let token = localStorage.getItem('token') || '';
+    let socket = null;
     let simulationInterval = null;
+    let botTokens = [];
+    let currentAuctionId = null;
+    let leaderboardData = {};
+    let activityLog = [];
+
+    const presets = {
+      basic: { bots: 10, frequency: 2000 },
+      'anti-snipe': { bots: 15, frequency: 1000 },
+      'high-volume': { bots: 30, frequency: 800 },
+      competitive: { bots: 20, frequency: 1500 }
+    };
 
     function showPanel(panelId) {
       document.getElementById('main-menu').style.display = 'none';
@@ -405,38 +533,30 @@
     }
 
     function showMenu() {
+      if (socket) socket.close();
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.getElementById('main-menu').style.display = 'grid';
     }
 
     function showResponse(elementId, data, isError = false) {
       const el = document.getElementById(elementId);
-      el.innerHTML = `<div class="response ${isError ? 'error' : 'success'}">${JSON.stringify(data, null, 2)}</div>`;
+      const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      el.innerHTML = `<div class="response ${isError ? 'error' : 'success'}">${text}</div>`;
     }
 
-    async function apiCall(endpoint, method = 'GET', body = null) {
+    async function apiCall(endpoint, method = 'GET', body = null, customToken = null) {
       const options = {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       };
 
-      if (token) {
-        options.headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      if (body) {
-        options.body = JSON.stringify(body);
-      }
+      const useToken = customToken || token;
+      if (useToken) options.headers['Authorization'] = `Bearer ${useToken}`;
+      if (body) options.body = JSON.stringify(body);
 
       const response = await fetch(`${API_URL}${endpoint}`, options);
       const data = await response.json();
-
-      if (!response.ok) {
-        throw data;
-      }
-
+      if (!response.ok) throw data;
       return data;
     }
 
@@ -445,11 +565,11 @@
         const data = await apiCall('/auth/register', 'POST', {
           username: document.getElementById('auth-username').value,
           password: document.getElementById('auth-password').value,
-          email: document.getElementById('auth-email').value || undefined,
         });
-
-        token = data.token;
-        localStorage.setItem('token', token);
+        if (data.data?.token) {
+          token = data.data.token;
+          localStorage.setItem('token', token);
+        }
         showResponse('auth-response', data);
       } catch (error) {
         showResponse('auth-response', error, true);
@@ -462,150 +582,139 @@
           username: document.getElementById('auth-username').value,
           password: document.getElementById('auth-password').value,
         });
-
-        token = data.token;
-        localStorage.setItem('token', token);
+        if (data.data?.token) {
+          token = data.data.token;
+          localStorage.setItem('token', token);
+        }
         showResponse('auth-response', data);
       } catch (error) {
         showResponse('auth-response', error, true);
       }
     }
 
-    function showCreateAuction() {
-      document.getElementById('create-auction').style.display = 'block';
-    }
-
-    async function createAuction() {
+    async function quickCreateAuction() {
       try {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 2);
-
         const data = await apiCall('/auctions', 'POST', {
-          name: document.getElementById('auction-name').value,
-          totalItems: parseInt(document.getElementById('auction-items').value),
-          itemsPerRound: parseInt(document.getElementById('auction-items-round').value),
-          startTime: now.toISOString(),
-          roundDuration: parseInt(document.getElementById('auction-duration').value),
+          name: `Demo Auction ${Date.now()}`,
+          totalItems: 200,
+          itemsPerRound: 50,
+          startTime: new Date(Date.now() + 30 * 1000).toISOString(),
+          roundDuration: 600,
           antiSnipeWindow: 60,
           antiSnipeExtension: 60,
-          minBid: parseInt(document.getElementById('auction-minbid').value),
-          minBidStep: parseInt(document.getElementById('auction-step').value),
+          minBid: 100,
+          minBidStep: 5,
           currency: 'STARS',
         });
-
-        showResponse('auctions-response', data);
+        alert(`Auction created! ID: ${data.data._id}\nStarts in 30 seconds`);
+        loadAuctions();
       } catch (error) {
-        showResponse('auctions-response', error, true);
+        alert('Error: ' + (error.error || 'Failed to create'));
       }
     }
 
     async function loadAuctions() {
       try {
         const data = await apiCall('/auctions');
-        
-        let html = '<table class="table"><thead><tr><th>Name</th><th>Items</th><th>Status</th><th>Rounds</th><th>Actions</th></tr></thead><tbody>';
-        
-        data.data.forEach(auction => {
+        let html = '<div style="margin-top: 20px;">';
+        data.data.forEach(a => {
           html += `
-            <tr>
-              <td>${auction.name}</td>
-              <td>${auction.totalItems}</td>
-              <td><span class="badge ${auction.status === 'active' ? 'active' : ''}">${auction.status}</span></td>
-              <td>${auction.currentRound}/${auction.totalRounds}</td>
-              <td><button onclick="viewAuction('${auction._id}')">View</button></td>
-            </tr>
+            <div style="background: #111; border: 1px solid #222; padding: 20px; margin-bottom: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 16px; font-weight: 600;">${a.name}</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    ${a.totalItems} items | ${a.currentRound}/${a.totalRounds} rounds | ${a.status}
+                  </div>
+                </div>
+                <div>
+                  <button class="copy-btn" onclick="copyToSim('${a._id}')">Use in Sim</button>
+                  <button class="copy-btn" onclick="copyToLive('${a._id}')">Watch Live</button>
+                </div>
+              </div>
+              <div style="font-family: monospace; font-size: 10px; color: #666; margin-top: 10px;">${a._id}</div>
+            </div>
           `;
         });
-        
-        html += '</tbody></table>';
-        document.getElementById('auctions-response').innerHTML = html;
+        html += '</div>';
+        document.getElementById('auctions-list').innerHTML = html;
       } catch (error) {
-        showResponse('auctions-response', error, true);
+        console.error(error);
       }
     }
 
-    async function placeBid() {
-      try {
-        const data = await apiCall('/bids', 'POST', {
-          auctionId: document.getElementById('bid-auction-id').value,
-          amount: parseInt(document.getElementById('bid-amount').value),
-        });
-
-        showResponse('bids-response', data);
-      } catch (error) {
-        showResponse('bids-response', error, true);
-      }
+    function copyToSim(id) {
+      document.getElementById('sim-auction-id').value = id;
+      showPanel('simulator');
     }
 
-    async function getMyBids() {
-      try {
-        const data = await apiCall('/bids/my-bids');
-        showResponse('bids-response', data);
-      } catch (error) {
-        showResponse('bids-response', error, true);
-      }
+    function copyToLive(id) {
+      document.getElementById('live-auction-id').value = id;
+      showPanel('live');
+      setTimeout(() => connectToAuction(), 500);
+    }
+
+    function selectPreset(name) {
+      document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
+      event.target.closest('.preset-card').classList.add('selected');
+      const preset = presets[name];
+      document.getElementById('sim-bots').value = preset.bots;
+      document.getElementById('sim-frequency').value = preset.frequency;
+      updateBotsValue(preset.bots);
+      updateFreqValue(preset.frequency);
+    }
+
+    function updateBotsValue(val) {
+      document.getElementById('bots-value').textContent = val;
+    }
+
+    function updateFreqValue(val) {
+      document.getElementById('freq-value').textContent = val;
     }
 
     async function startSimulation() {
-      const bots = parseInt(document.getElementById('sim-bots').value);
+      const botsCount = parseInt(document.getElementById('sim-bots').value);
       const frequency = parseInt(document.getElementById('sim-frequency').value);
+      const auctionId = document.getElementById('sim-auction-id').value;
 
-      document.getElementById('simulator-response').innerHTML = '<div class="loading">Simulation running...</div>';
+      if (!auctionId) {
+        alert('Select an auction first');
+        return;
+      }
 
-      // Create bot users
-      const botUsers = [];
-      for (let i = 0; i < bots; i++) {
+      activityLog = [];
+      document.getElementById('activity-feed').innerHTML = '<div style="text-align: center; color: #666;">Creating bots...</div>';
+
+      botTokens = [];
+      for (let i = 0; i < botsCount; i++) {
         try {
           const bot = await apiCall('/auth/register', 'POST', {
             username: `bot_${Date.now()}_${i}`,
             password: 'botpass123',
           });
-          botUsers.push(bot);
-        } catch (e) {
-          console.error('Bot creation failed:', e);
-        }
+          if (bot.data?.token) botTokens.push(bot.data.token);
+        } catch (e) {}
       }
 
-      // Get active auctions
-      const auctions = await apiCall('/auctions?status=active');
-      if (!auctions.data.length) {
-        showResponse('simulator-response', { error: 'No active auctions' }, true);
+      if (botTokens.length === 0) {
+        alert('Failed to create bots');
         return;
       }
 
-      const auctionId = auctions.data[0]._id;
-
-      // Start bidding
-      let bidCount = 0;
+      let bidCount = 0, errorCount = 0;
       simulationInterval = setInterval(async () => {
-        const randomBot = botUsers[Math.floor(Math.random() * botUsers.length)];
+        const randomBot = botTokens[Math.floor(Math.random() * botTokens.length)];
         const amount = Math.floor(Math.random() * 500) + 100;
 
         try {
-          await fetch(`${API_URL}/bids`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${randomBot.token}`,
-            },
-            body: JSON.stringify({ auctionId, amount }),
-          });
-
+          await apiCall('/bids', 'POST', { auctionId, amount }, randomBot);
           bidCount++;
-          document.getElementById('simulator-response').innerHTML = 
-            `<div class="stats">
-              <div class="stat">
-                <div class="stat-value">${botUsers.length}</div>
-                <div class="stat-label">Active Bots</div>
-              </div>
-              <div class="stat">
-                <div class="stat-value">${bidCount}</div>
-                <div class="stat-label">Total Bids</div>
-              </div>
-            </div>`;
+          addActivity(`Bid placed: ${amount} STARS`, 'bid');
         } catch (e) {
-          console.error('Bid failed:', e);
+          errorCount++;
         }
+
+        updateSimStats(botTokens.length, bidCount, errorCount);
       }, frequency);
     }
 
@@ -613,28 +722,100 @@
       if (simulationInterval) {
         clearInterval(simulationInterval);
         simulationInterval = null;
-        showResponse('simulator-response', { message: 'Simulation stopped' });
+        addActivity('Simulation stopped', 'system');
       }
     }
 
-    async function loadStats() {
+    function updateSimStats(bots, bids, errors) {
+      document.getElementById('simulator-stats').innerHTML = `
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">${bots}</div>
+            <div class="stat-label">ACTIVE BOTS</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${bids}</div>
+            <div class="stat-label">SUCCESSFUL BIDS</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${errors}</div>
+            <div class="stat-label">ERRORS</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addActivity(text, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      activityLog.unshift({ text, type, time });
+      if (activityLog.length > 50) activityLog.pop();
+      
+      const feed = document.getElementById('activity-feed');
+      feed.innerHTML = activityLog.map(a => `
+        <div class="activity-item ${a.type}">
+          <div>${a.text}</div>
+          <div class="activity-time">${a.time}</div>
+        </div>
+      `).join('');
+    }
+
+    async function connectToAuction() {
+      const auctionId = document.getElementById('live-auction-id').value;
+      if (!auctionId) return;
+
+      currentAuctionId = auctionId;
+      
+      // Загрузить начальный leaderboard
+      await updateLeaderboard();
+      
+      // Обновлять каждые 3 секунды
+      setInterval(updateLeaderboard, 3000);
+    }
+
+    async function updateLeaderboard() {
+      if (!currentAuctionId) return;
+
       try {
-        const auctions = await apiCall('/auctions');
-        
-        document.getElementById('stats-response').innerHTML = 
-          `<div class="stats">
-            <div class="stat">
-              <div class="stat-value">${auctions.data.length}</div>
-              <div class="stat-label">Total Auctions</div>
-            </div>
-            <div class="stat">
-              <div class="stat-value">${auctions.data.filter(a => a.status === 'active').length}</div>
-              <div class="stat-label">Active Auctions</div>
-            </div>
-          </div>`;
-      } catch (error) {
-        showResponse('stats-response', error, true);
+        const data = await apiCall(`/auctions/${currentAuctionId}/rounds/1/leaderboard`);
+        renderLeaderboard(data.data);
+      } catch (e) {
+        console.error('Leaderboard error:', e);
       }
+    }
+
+    function renderLeaderboard(data) {
+      if (!data || !data.entries) return;
+
+      const html = data.entries.map((entry, idx) => {
+        const isWinning = entry.position <= data.cutoffPosition;
+        return `
+          <div class="leaderboard-item ${isWinning ? 'winning' : ''} new-bid">
+            <div class="position ${isWinning ? 'winning' : ''}">#${entry.position}</div>
+            <div class="user-info">
+              <div class="username">${entry.username}</div>
+              <div class="bid-time">Active bid</div>
+            </div>
+            <div class="bid-amount">${entry.amount} STARS</div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('leaderboard-content').innerHTML = html || '<div style="text-align: center; color: #666; padding: 40px;">No bids yet</div>';
+
+      document.getElementById('live-stats').innerHTML = `
+        <div class="stat">
+          <div class="stat-value">${data.totalBids}</div>
+          <div class="stat-label">TOTAL BIDS</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${data.cutoffPosition}</div>
+          <div class="stat-label">WINNING SPOTS</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${data.itemsInRound}</div>
+          <div class="stat-label">ITEMS</div>
+        </div>
+      `;
     }
   </script>
 </body>

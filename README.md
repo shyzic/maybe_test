@@ -1,243 +1,779 @@
-# 🎯 Auction Backend System
+# 🎯 Multi-Round Auction System
 
-Многораундовая аукционная система для распределения ограниченных цифровых товаров. Backend для приложения типа Telegram Gift Auctions.
+> **Professional multi-round auction platform with real-time bidding, anti-sniping protection, and advanced simulation capabilities.**
 
-## ✨ Основные возможности
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green.svg)](https://www.mongodb.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.6-black.svg)](https://socket.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-- ✅ **Многораундовые аукционы** с автоматическим созданием раундов
-- ✅ **Real-time обновления** через WebSocket
-- ✅ **Anti-sniping защита** с автоматическим продлением раундов
-- ✅ **Умная система ставок** с резервированием баланса
-- ✅ **Job Queue** для фоновых задач
-- ✅ **Автоматические планировщики** для запуска/завершения раундов
-- ✅ **REST API** с JWT аутентификацией
-- ✅ **MongoDB транзакции** для консистентности данных
+---
 
-## 🚀 Быстрый старт
+## 📋 Table of Contents
 
-### Docker Compose (рекомендуется)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Auction Mechanics](#auction-mechanics)
+- [Technology Stack](#technology-stack)
+- [Quick Start](#quick-start)
+- [API Documentation](#api-documentation)
+- [Real-Time Updates](#real-time-updates)
+- [Simulation Modes](#simulation-modes)
+- [Testing](#testing)
 
-```bash
-# 1. Клонировать и распаковать
-tar -xzf auction-backend-part8.tar.gz
-cd auction-backend
+---
 
-# 2. Запустить все сервисы
-docker-compose up -d
+## 🎯 Overview
 
-# 3. Создать демо данные
-docker-compose exec backend npm run seed
+A sophisticated multi-round auction system designed for distributing limited digital assets (NFTs, collectibles, etc.) where **multiple items** are auctioned across **multiple rounds**. Users place bids that carry over between rounds until they either win or the auction completes.
 
-# 4. Проверить статус
-curl http://localhost:3000/api/health
+**Perfect for:**
+- NFT collections (e.g., 200 unique items)
+- Limited edition merchandise
+- Digital collectibles (Telegram Stars gifts)
+- Event tickets with tiered pricing
+
+---
+
+## ✨ Key Features
+
+### Core Auction Mechanics
+- ✅ **Multi-Round System** - Distribute 200+ items across 4-10 rounds
+- ✅ **Bid Carry-Over** - Losing bids automatically move to next round
+- ✅ **Anti-Sniping Protection** - Last-second bids extend the round
+- ✅ **Fair Distribution** - Highest N bids win N items per round
+- ✅ **Balance Management** - Reserved/available balance tracking
+
+### Real-Time Features
+- 🔴 **Live Leaderboard** - See all bids update in real-time
+- ⚡ **WebSocket Updates** - Instant bid notifications
+- 📊 **Activity Feed** - Track every bid as it happens
+- 🎯 **Position Tracking** - Know if you're winning
+
+### Advanced Simulation
+- 🤖 **Bot Simulator** - Test with 5-50 automated bidders
+- 📋 **4 Preset Modes** - Basic, Anti-Snipe, High-Volume, Competitive
+- 📈 **Real-Time Stats** - Monitor bots, bids, errors
+- 🎬 **Perfect for Demos** - Showcase system under load
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────┐
+│   Client    │ (React-style SPA, WebSocket)
+└──────┬──────┘
+       │
+┌──────▼──────────────────────────────────────┐
+│          Express REST API                    │
+│  ┌────────────┬──────────────┬────────────┐ │
+│  │Controllers │  Middleware  │   Routes   │ │
+│  └─────┬──────┴──────┬───────┴──────┬─────┘ │
+│        │             │              │       │
+│  ┌─────▼─────────────▼──────────────▼─────┐ │
+│  │            Services Layer              │ │
+│  │  • AuctionService                      │ │
+│  │  • RoundService (Anti-Snipe Logic)    │ │
+│  │  • BidService (Transactions)          │ │
+│  │  • UserService (Balance)              │ │
+│  └─────┬──────────────────────────────────┘ │
+└────────┼────────────────────────────────────┘
+         │
+┌────────▼─────────┐      ┌──────────────┐
+│   MongoDB 7      │      │  Socket.IO   │
+│  (Replica Set)   │      │  WebSocket   │
+│  • ACID Trans.   │      │  • Events    │
+│  • Optimistic    │      │  • Rooms     │
+│    Locking       │      └──────────────┘
+└──────────────────┘
+         │
+┌────────▼─────────┐
+│    Redis 7       │
+│  • BullMQ Queue  │
+│  • Job Schedule  │
+└──────────────────┘
 ```
 
-Готово! API доступен на `http://localhost:3000/api`
+### Data Flow
 
-### Без Docker
+```
+User Places Bid
+    ↓
+1. Check balance (User.availableBalance)
+2. Reserve funds (User.reservedBalance += amount)
+3. Create Bid (status: active)
+4. Create Transaction (type: bid_placed)
+    ↓
+[MongoDB Transaction - ACID]
+    ↓
+5. WebSocket → broadcast to auction room
+6. Check anti-snipe window
+7. Extend round if needed
+```
+
+---
+
+## 🎲 Auction Mechanics
+
+### How It Works
+
+1. **Auction Creation**
+   - Admin sets: total items (200), items per round (50)
+   - System calculates: 4 rounds needed
+   - Rounds auto-created with scheduled start/end times
+
+2. **Round Flow**
+   ```
+   Round 1: 50 items, 100 bids placed
+   → Top 50 bids WIN items #1-50
+   → Bottom 50 bids CARRY OVER to Round 2
+   
+   Round 2: 50 items, 50 carried + 30 new = 80 bids
+   → Top 50 WIN items #51-100
+   → Bottom 30 CARRY OVER to Round 3
+   
+   ... continues until all items distributed
+   ```
+
+3. **Anti-Sniping**
+   ```
+   Round ends at: 10:00:00
+   Anti-snipe window: last 60 seconds
+   
+   User bids at: 09:59:45
+   → Round extends by +60 seconds
+   → New end time: 10:01:00
+   
+   Max extensions: 10
+   ```
+
+4. **Balance Management**
+   - Total Balance: 10,000 STARS
+   - Reserved: 500 (active bid)
+   - **Available: 9,500** (can bid up to this)
+
+5. **Winner Selection**
+   ```
+   Sort all active bids by:
+   1. Amount (DESC)
+   2. Created time (ASC) - earlier wins ties
+   
+   Take top N bids = N items won
+   ```
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend
+- **Node.js 20** - Runtime
+- **TypeScript 5** - Type safety
+- **Express 4** - REST API
+- **Socket.IO 4** - Real-time updates
+- **Mongoose 8** - MongoDB ODM
+- **BullMQ 5** - Job queue (round scheduling)
+- **node-cron** - Periodic tasks
+
+### Database
+- **MongoDB 7** - Primary database (replica set for transactions)
+- **Redis 7** - Queue & caching
+
+### DevOps
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Winston** - Logging
+
+### Frontend
+- **Vanilla JS** - No framework overhead
+- **WebSocket Client** - Real-time updates
+- **CSS Animations** - Smooth UX
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+```bash
+# Required
+- Docker & Docker Compose
+- Node.js 20+ (for local dev)
+
+# Optional
+- MongoDB 7
+- Redis 7
+```
+
+### 1. Clone & Setup
 
 ```bash
-# Требования: Node.js 20+, MongoDB 7, Redis 7
+# Clone repository
+git clone <your-repo-url>
+cd auction-backend
 
-# 1. Установить зависимости
+# Run cleanup script (prepares project)
+chmod +x /mnt/user-data/outputs/cleanup.sh
+./cleanup.sh
+
+# Copy final files
+cp /mnt/user-data/outputs/final-index.html public/index.html
+cp /mnt/user-data/outputs/fixed-docker-compose.yml docker-compose.yml
+```
+
+### 2. Docker Deployment (Recommended)
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# Wait for MongoDB replica set (IMPORTANT!)
+echo "Waiting 30 seconds for replica set initialization..."
+sleep 30
+
+# Seed demo data
+docker-compose exec backend npm run seed
+
+# Check status
+docker-compose ps
+docker-compose logs backend | tail -20
+```
+
+**Access:**
+- Web UI: http://localhost:3000
+- API: http://localhost:3000/api
+- Health: http://localhost:3000/api/health
+
+### 3. Local Development
+
+```bash
+# Install dependencies
 npm install
 
-# 2. Запустить MongoDB и Redis
-docker run -d -p 27017:27017 mongo:7
-docker run -d -p 6379:6379 redis:7-alpine
+# Start MongoDB & Redis
+docker-compose up -d mongodb redis
 
-# 3. Настроить .env
+# Configure environment
 cp .env.example .env
 
-# 4. Запустить
+# Run in dev mode
 npm run dev
 ```
 
-## 📡 Endpoints
+---
 
-**Base URL:** `http://localhost:3000/api`
+## 📚 API Documentation
 
-### Auth
-- `POST /auth/register` - Регистрация
-- `POST /auth/login` - Вход
-- `GET /auth/me` - Текущий пользователь
+### Authentication
+
+```bash
+# Register
+POST /api/auth/register
+{
+  "username": "john_doe",
+  "password": "password123",
+  "email": "john@example.com"  # optional
+}
+
+# Login
+POST /api/auth/login
+{
+  "username": "john_doe",
+  "password": "password123"
+}
+# Returns: { token: "jwt-token", user: {...} }
+
+# Get current user
+GET /api/auth/me
+Headers: Authorization: Bearer <token>
+```
 
 ### Auctions
-- `POST /auctions` - Создать (admin)
-- `GET /auctions` - Список
-- `GET /auctions/:id` - Детали
-- `GET /auctions/:id/rounds/:num/leaderboard` - Leaderboard
 
-### Bids
-- `POST /bids` - Разместить ставку
-- `PUT /bids/:id` - Повысить ставку
-- `GET /bids/my-bids` - Мои ставки
+```bash
+# List auctions
+GET /api/auctions?status=active&page=1&limit=20
 
-**Полная документация:** [WEBSOCKET.md](./WEBSOCKET.md)
+# Get auction details
+GET /api/auctions/:id
 
-## 🔌 WebSocket
+# Create auction (admin)
+POST /api/auctions
+Headers: Authorization: Bearer <admin-token>
+{
+  "name": "Premium NFT Collection",
+  "totalItems": 200,
+  "itemsPerRound": 50,
+  "startTime": "2026-01-23T12:00:00Z",
+  "roundDuration": 3600,  # seconds
+  "antiSnipeWindow": 60,
+  "antiSnipeExtension": 60,
+  "maxExtensions": 10,
+  "minBid": 100,
+  "minBidStep": 5,  # percentage
+  "currency": "STARS"
+}
 
+# Get auction stats
+GET /api/auctions/:id/stats
+
+# Get current round
+GET /api/auctions/:id/current-round
+
+# Get leaderboard
+GET /api/auctions/:auctionId/rounds/:roundNumber/leaderboard
+```
+
+### Bidding
+
+```bash
+# Place bid
+POST /api/bids
+Headers: Authorization: Bearer <token>
+{
+  "auctionId": "...",
+  "amount": 500
+}
+
+# Increase bid
+PUT /api/bids/:id
+{
+  "newAmount": 750  # must be +5% minimum
+}
+
+# Get my bids
+GET /api/bids/my-bids?page=1&limit=20
+
+# Get my position
+GET /api/auctions/:auctionId/my-position
+```
+
+### User
+
+```bash
+# Get balance
+GET /api/users/me/balance
+
+# Deposit (demo)
+POST /api/users/me/deposit
+{ "amount": 5000 }
+
+# Get transactions
+GET /api/users/me/transactions?page=1
+```
+
+---
+
+## 🔴 Real-Time Updates
+
+### WebSocket Events
+
+**Client → Server:**
 ```javascript
-import io from 'socket.io-client';
-
+// Connect
 const socket = io('http://localhost:3000', {
   auth: { token: 'your-jwt-token' }
 });
 
-socket.emit('join:auction', auctionId);
+// Subscribe to auction
+socket.emit('subscribe:auction', auctionId);
+```
 
-socket.on('bid:placed', (data) => {
-  console.log('New bid:', data.amount);
+**Server → Client:**
+```javascript
+// Auction started
+socket.on('auction:started', (data) => {
+  // { auctionId, name, currentRound, startTime }
 });
 
+// Round started
+socket.on('round:started', (data) => {
+  // { auctionId, roundNumber, itemsInRound, scheduledEndTime }
+});
+
+// Round extended (anti-snipe)
 socket.on('round:extended', (data) => {
-  console.log('Round extended:', data.newEndTime);
+  // { auctionId, roundNumber, newEndTime, extensionsCount }
+});
+
+// Bid placed
+socket.on('bid:placed', (data) => {
+  // { auctionId, bidId, userId, username, amount, roundNumber }
+});
+
+// Bid increased
+socket.on('bid:increased', (data) => {
+  // { auctionId, bidId, username, previousAmount, newAmount }
+});
+
+// Round completed
+socket.on('round:completed', (data) => {
+  // { auctionId, roundNumber, winnersCount }
+});
+
+// You won!
+socket.on('user:won', (data) => {
+  // { auctionId, itemNumber, amount, roundNumber }
 });
 ```
 
-## 🧪 Тестирование
+---
+
+## 🎮 Simulation Modes
+
+### 4 Built-in Presets
+
+**1. Basic Demo (10 bots, 2s frequency)**
+- Perfect for: First-time demos
+- Shows: Steady bidding flow
+- Use case: Explaining mechanics
+
+**2. Anti-Snipe Test (15 bots, 1s frequency)**
+- Perfect for: Demonstrating protection
+- Shows: Round extensions in action
+- Use case: Security features showcase
+
+**3. High Volume (30 bots, 800ms frequency)**
+- Perfect for: Stress testing
+- Shows: System handles load
+- Use case: Performance demonstration
+
+**4. Competitive (20 bots, 1.5s frequency)**
+- Perfect for: Realistic auction
+- Shows: Natural competition
+- Use case: Production-like demo
+
+### Running Simulation
 
 ```bash
-# Unit тесты
-npm test
+# Via UI
+1. Create auction (Quick Create button)
+2. Go to "Live Simulator"
+3. Select preset
+4. Click "Start Simulation"
 
-# Seed демо данных
-npm run seed
-
-# Создаст:
-# - admin / admin123
-# - user1-10 / password123
-# - 1 демо аукцион
-```
-
-## 📂 Структура
-
-```
-src/
-├── models/         # 6 моделей (User, Auction, Round, Bid, etc)
-├── services/       # 5 сервисов (бизнес-логика)
-├── controllers/    # 4 контроллера (HTTP handlers)
-├── routes/         # API маршруты
-├── websocket/      # Socket.IO + 10 событий
-├── jobs/           # BullMQ + Cron планировщики
-└── middleware/     # Auth, validation, errors
-```
-
-## 🔧 Технологии
-
-- **Backend:** Node.js 20, TypeScript 5, Express 4
-- **Database:** MongoDB 7, Mongoose
-- **Cache/Queue:** Redis 7, BullMQ 5
-- **Real-time:** Socket.IO 4
-- **Auth:** JWT, Bcrypt
-- **Logging:** Winston
-- **Scheduler:** node-cron
-
-## 📊 Архитектура
-
-```
-Client → Express API → Services → MongoDB
-           ↓
-        Socket.IO → Events
-           ↓
-        BullMQ → Background Jobs
-```
-
-## 🌱 Примеры использования
-
-### Создание аукциона
-```bash
-curl -X POST http://localhost:3000/api/auctions \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "NFT Collection",
-    "totalItems": 200,
-    "itemsPerRound": 50,
-    "startTime": "2024-12-25T12:00:00Z",
-    "roundDuration": 3600,
-    "minBid": 100,
-    "currency": "STARS"
-  }'
-```
-
-### Размещение ставки
-```bash
+# Via API
 curl -X POST http://localhost:3000/api/bids \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer $BOT_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "auctionId": "<auction-id>",
-    "amount": 500
-  }'
+  -d '{"auctionId":"...","amount":500}'
 ```
 
-Больше примеров: [EXAMPLES.md](./EXAMPLES.md)
+---
 
-## 🐳 Docker
+## 🧪 Testing
+
+### Seed Demo Data
 
 ```bash
-# Собрать образ
-docker build -t auction-backend .
+# Creates:
+# - 1 admin user (admin / admin123)
+# - 10 regular users (user1-10 / password123)
+# - 1 demo auction (starts in 30 seconds)
 
-# Запустить с compose
-docker-compose up -d
+docker-compose exec backend npm run seed
 
-# Просмотр логов
+# Or locally
+npm run seed
+```
+
+### Test Credentials
+
+```
+Admin:
+  username: admin
+  password: admin123
+
+Users:
+  username: user1, user2, ..., user10
+  password: password123
+  balance: 10,000 STARS each
+```
+
+### Manual Testing Flow
+
+```bash
+# 1. Register/Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","password":"password123"}'
+# Save token
+
+# 2. View auctions
+curl http://localhost:3000/api/auctions
+
+# 3. Place bid
+curl -X POST http://localhost:3000/api/bids \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"auctionId":"...","amount":500}'
+
+# 4. Check leaderboard
+curl http://localhost:3000/api/auctions/$AUCTION_ID/rounds/1/leaderboard
+
+# 5. Get my position
+curl http://localhost:3000/api/auctions/$AUCTION_ID/my-position \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## 📊 Key Implementation Details
+
+### ACID Transactions
+
+All financial operations use MongoDB transactions:
+
+```typescript
+const session = await mongoose.startSession();
+session.startTransaction();
+
+try {
+  // 1. Reserve user balance
+  user.reservedBalance += amount;
+  await user.save({ session });
+  
+  // 2. Create bid
+  const bid = await Bid.create([{...}], { session });
+  
+  // 3. Record transaction
+  await Transaction.create([{...}], { session });
+  
+  await session.commitTransaction();
+} catch (error) {
+  await session.abortTransaction();
+  throw error;
+}
+```
+
+### Anti-Sniping Logic
+
+```typescript
+// Check if in anti-snipe window
+const timeUntilEnd = roundEndTime - Date.now();
+const inWindow = timeUntilEnd <= antiSnipeWindow * 1000;
+
+if (inWindow && extensionsCount < maxExtensions) {
+  // Extend round
+  round.actualEndTime = new Date(
+    round.actualEndTime.getTime() + antiSnipeExtension * 1000
+  );
+  round.extensionsCount++;
+  
+  // Reschedule completion job
+  await rescheduleRoundEnd(round._id, round.actualEndTime);
+}
+```
+
+### Winner Selection
+
+```typescript
+// Get all active bids for round
+const bids = await Bid.find({
+  auctionId,
+  currentRound: roundNumber,
+  status: 'active'
+})
+.sort({ amount: -1, createdAt: 1 }); // DESC amount, ASC time
+
+// Top N win
+const winners = bids.slice(0, itemsInRound);
+const losers = bids.slice(itemsInRound);
+
+// Process winners
+for (const bid of winners) {
+  bid.status = 'won';
+  user.balance -= bid.amount;
+  user.reservedBalance -= bid.amount;
+  // ...
+}
+
+// Carry over losers (if not last round)
+for (const bid of losers) {
+  bid.status = 'carried_over';
+  bid.currentRound += 1;
+  // ...
+}
+```
+
+---
+
+## 🎯 Production Considerations
+
+### Scaling
+
+- **Horizontal:** Multiple API instances behind load balancer
+- **Database:** MongoDB sharding for >100k auctions
+- **Queue:** Redis Cluster for high-volume jobs
+- **WebSocket:** Sticky sessions or Redis adapter
+
+### Security
+
+- ✅ JWT with short expiration (7 days)
+- ✅ Rate limiting (10 requests/second per user)
+- ✅ Input validation & sanitization
+- ✅ CORS protection
+- ✅ Helmet security headers
+- ⚠️ Add: HTTPS, API keys, 2FA for production
+
+### Monitoring
+
+```bash
+# Health check
+curl http://localhost:3000/api/health
+
+# Logs
 docker-compose logs -f backend
 
-# Остановить
-docker-compose down
+# MongoDB status
+docker-compose exec mongodb mongosh --eval "rs.status()"
+
+# Redis info
+docker-compose exec redis redis-cli INFO
 ```
 
-## 🔐 Безопасность
-
-- ✅ JWT аутентификация
-- ✅ Bcrypt хеширование
-- ✅ Helmet security headers
-- ✅ CORS protection
-- ✅ Input validation
-- ✅ MongoDB transactions
+---
 
 ## 📝 Environment Variables
 
 ```bash
-NODE_ENV=production
+# Server
 PORT=3000
-MONGODB_URI=mongodb://localhost:27017/auction
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
+NODE_ENV=production
+
+# Database
+MONGODB_URI=mongodb://mongodb:27017/auction?replicaSet=rs0
+REDIS_URL=redis://redis:6379
+
+# Auth
+JWT_SECRET=your-super-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
+
+# Demo
+DEMO_INITIAL_BALANCE=10000
+
+# Auction Defaults
+DEFAULT_ROUND_DURATION=3600
+DEFAULT_ITEMS_PER_ROUND=50
+DEFAULT_MIN_BID=100
+DEFAULT_MIN_BID_STEP=5
+DEFAULT_ANTI_SNIPE_WINDOW=60
+DEFAULT_ANTI_SNIPE_EXTENSION=60
+DEFAULT_MAX_EXTENSIONS=10
 ```
-
-## 🚨 Troubleshooting
-
-**MongoDB connection failed:**
-```bash
-docker-compose logs mongodb
-docker-compose restart mongodb
-```
-
-**Redis connection failed:**
-```bash
-docker-compose exec redis redis-cli ping
-```
-
-**Jobs not processing:**
-```bash
-docker-compose logs backend | grep Worker
-```
-
-## 📄 Лицензия
-
-MIT
-
-## 🙏 Credits
-
-Разработано с использованием TypeScript, MongoDB, Socket.IO и ❤️
 
 ---
 
-**Made by:** shyzo
-**Version:** 1.0.0  
-**Last Updated:** January 2026
+## 🐛 Troubleshooting
+
+### MongoDB Transaction Errors
+
+**Error:** "Transaction numbers are only allowed on a replica set"
+
+**Solution:**
+```bash
+# Ensure using fixed-docker-compose.yml with replica set
+docker-compose down -v
+cp fixed-docker-compose.yml docker-compose.yml
+docker-compose up -d
+sleep 30  # Wait for replica set init
+```
+
+### Port Already in Use
+
+```bash
+# Find process
+lsof -i :3000
+
+# Kill process
+kill -9 <PID>
+
+# Or change port in .env
+PORT=3001
+```
+
+### WebSocket Connection Failed
+
+**Check:**
+1. Server running: `curl http://localhost:3000/api/health`
+2. CORS settings in `src/app.ts`
+3. Token valid: Check JWT expiration
+4. Network settings: Check firewall
+
+---
+
+## 🎬 Demo Video Structure
+
+**Recommended flow for competition submission:**
+
+1. **System Start** (0:00-0:30)
+   - Show `docker-compose up`
+   - Show healthy services
+   - Open http://localhost:3000
+
+2. **User Registration** (0:30-1:00)
+   - Register as user1
+   - Show balance: 10,000 STARS
+
+3. **Auction Creation** (1:00-1:30)
+   - Login as admin
+   - Click "Quick Create"
+   - Show: 200 items, 4 rounds, starts in 30s
+
+4. **Simulation Demo** (1:30-3:00)
+   - Select "Basic Demo" preset
+   - Show 10 bots created
+   - Start simulation
+   - Show real-time stats
+   - Show activity feed
+
+5. **Live Leaderboard** (3:00-4:00)
+   - Switch to "Live Auction" tab
+   - Show real-time position updates
+   - Show winning positions (green)
+   - Show bid amounts updating
+
+6. **Anti-Snipe Test** (4:00-5:00)
+   - Change to "Anti-Snipe Test" preset
+   - Show round extension happening
+   - Show extension counter
+
+7. **Winner Announcement** (5:00-5:30)
+   - Show round completion
+   - Show winners list
+   - Show balance updates
+
+**Total: 5-6 minutes**
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file
+
+---
+
+## 🙏 Credits
+
+Built with ❤️ using:
+- [Node.js](https://nodejs.org/)
+- [MongoDB](https://www.mongodb.com/)
+- [Socket.IO](https://socket.io/)
+- [Express](https://expressjs.com/)
+- [Docker](https://www.docker.com/)
+
+---
+
+## 📞 Support
+
+For issues or questions:
+- Open an issue on GitHub
+- Check existing documentation
+- Review API examples
+
+---
+
+**Made by shyzo**
+
+*Demonstrating professional multi-round auction mechanics with real-time updates and anti-sniping protection.*

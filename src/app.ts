@@ -3,8 +3,9 @@ import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+// Swagger отключен
 // import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger';
+// import { swaggerSpec } from './config/swagger';
 import { connectDatabase } from './config/database';
 import { closeRedisConnection } from './config/redis';
 import env from './config/env';
@@ -22,6 +23,7 @@ class App {
     this.app = express();
     this.httpServer = createServer(this.app);
     this.initializeMiddlewares();
+    // Swagger отключен для избежания проблем
     // this.initializeSwagger();
     this.initializeRoutes();
     this.initializeErrorHandling();
@@ -58,28 +60,6 @@ class App {
     });
   }
 
-  // private initializeSwagger(): void {
-  //   const swaggerUiOptions = {
-  //     customCss: `
-  //       .swagger-ui .topbar { display: none }
-  //       .swagger-ui { background: #fafafa; }
-  //     `,
-  //     customSiteTitle: 'Auction API Documentation',
-  //     swaggerOptions: {
-  //       persistAuthorization: true,
-  //       displayRequestDuration: true,
-  //       filter: true,
-  //     },
-  //   };
-
-  //   this.app.get('/api-docs.json', (req: Request, res: Response) => {
-  //     res.setHeader('Content-Type', 'application/json');
-  //     res.send(swaggerSpec);
-  //   });
-
-  //   this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-  // }
-
   private initializeRoutes(): void {
     this.app.use('/api', routes);
 
@@ -91,7 +71,6 @@ class App {
         timestamp: new Date().toISOString(),
         endpoints: {
           api: '/api',
-          docs: '/api-docs',
           demo: '/index.html',
           health: '/api/health',
         },
@@ -126,7 +105,6 @@ class App {
         logger.info(`Server is running on port ${env.port}`);
         logger.info(`Environment: ${env.nodeEnv}`);
         logger.info(`API: http://localhost:${env.port}/api`);
-        logger.info(`Docs: http://localhost:${env.port}/api-docs`);
         logger.info(`Demo: http://localhost:${env.port}`);
         logger.info(`WebSocket: ws://localhost:${env.port}`);
       });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import AuctionController from '../controllers/AuctionController';
 import { authenticate, requireAdmin } from '../middleware/auth';
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateFields } from '../middleware/validation';
 
 const router = Router();
 
@@ -78,7 +78,23 @@ router.get('/', AuctionController.getAuctions);
  *       201:
  *         description: Auction created
  */
-router.post('/', authenticate, requireAdmin, validateBody, AuctionController.createAuction);
+router.post(
+  '/',
+  authenticate,
+  requireAdmin,
+  validateBody,
+  validateFields([
+    'name',
+    'totalItems',
+    'itemsPerRound',
+    'startTime',
+    'roundDuration',
+    'minBid',
+    'minBidStep',
+    'currency'
+  ]),
+  AuctionController.createAuction
+);
 
 /**
  * @swagger
@@ -100,7 +116,14 @@ router.post('/', authenticate, requireAdmin, validateBody, AuctionController.cre
  */
 router.get('/:id', AuctionController.getAuctionById);
 
-router.put('/:id', authenticate, requireAdmin, validateBody, AuctionController.updateAuction);
+router.put(
+  '/:id',
+  authenticate,
+  requireAdmin,
+  validateBody,
+  AuctionController.updateAuction
+);
+
 router.delete('/:id', authenticate, requireAdmin, AuctionController.cancelAuction);
 router.post('/:id/start', authenticate, requireAdmin, AuctionController.startAuction);
 router.get('/:id/stats', AuctionController.getAuctionStats);

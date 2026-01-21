@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import UserController from '../controllers/UserController';
 import { authenticate } from '../middleware/auth';
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateFields } from '../middleware/validation';
 
 const router = Router();
 
@@ -17,7 +17,7 @@ router.get('/:id', UserController.getUserProfile);
  * @desc    Обновление своего профиля
  * @access  Private
  */
-router.put('/me', authenticate, UserController.updateProfile);
+router.put('/me', authenticate, validateBody, UserController.updateProfile);
 
 /**
  * @route   GET /api/users/me/balance
@@ -34,9 +34,8 @@ router.get('/me/balance', authenticate, UserController.getBalance);
 router.post(
   '/me/deposit',
   authenticate,
-  validateBody({
-    required: ['amount'],
-  }),
+  validateBody,
+  validateFields(['amount']),
   UserController.deposit
 );
 
@@ -48,9 +47,8 @@ router.post(
 router.post(
   '/me/withdraw',
   authenticate,
-  validateBody({
-    required: ['amount'],
-  }),
+  validateBody,
+  validateFields(['amount']),
   UserController.withdraw
 );
 

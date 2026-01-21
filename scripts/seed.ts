@@ -46,7 +46,7 @@ async function seed() {
       description: 'Limited edition digital collectibles for demo purposes',
       totalItems: 200,
       itemsPerRound: 50,
-      startTime: new Date(Date.now() + 2 * 60 * 1000), // Через 2 минуты
+      startTime: new Date(Date.now() + 10 * 1000),
       roundDuration: 600, // 10 минут
       antiSnipeWindow: 60,
       antiSnipeExtension: 60,

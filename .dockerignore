@@ -3,7 +3,6 @@ npm-debug.log
 dist
 .env
 .env.local
-.env.*.local
 .git
 .gitignore
 README.md
@@ -11,7 +10,8 @@ README.md
 .idea
 *.md
 coverage
-.nyc_output
 logs
 *.log
 tests
+.dockerignore
+docker-compose.yml

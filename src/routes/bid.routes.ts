@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import BidController from '../controllers/BidController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateFields } from '../middleware/validation';
 
 const router = Router();
 
@@ -31,7 +31,13 @@ const router = Router();
  *       201:
  *         description: Bid placed successfully
  */
-router.post('/', authenticate, validateBody, BidController.placeBid);
+router.post(
+  '/',
+  authenticate,
+  validateBody,
+  validateFields(['auctionId', 'amount']),
+  BidController.placeBid
+);
 
 /**
  * @swagger
@@ -62,7 +68,13 @@ router.post('/', authenticate, validateBody, BidController.placeBid);
  *       200:
  *         description: Bid increased
  */
-router.put('/:id', authenticate, validateBody, BidController.increaseBid);
+router.put(
+  '/:id',
+  authenticate,
+  validateBody,
+  validateFields(['newAmount']),
+  BidController.increaseBid
+);
 
 /**
  * @swagger
