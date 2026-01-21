@@ -26,7 +26,7 @@ services:
     container_name: auction-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '63790:6379'
     volumes:
       - redis_data:/data
     networks:

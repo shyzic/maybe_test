@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
-import swaggerUi from 'swagger-ui-express';
+// import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { connectDatabase } from './config/database';
 import { closeRedisConnection } from './config/redis';
@@ -22,7 +22,7 @@ class App {
     this.app = express();
     this.httpServer = createServer(this.app);
     this.initializeMiddlewares();
-    this.initializeSwagger();
+    // this.initializeSwagger();
     this.initializeRoutes();
     this.initializeErrorHandling();
   }
@@ -58,27 +58,27 @@ class App {
     });
   }
 
-  private initializeSwagger(): void {
-    const swaggerUiOptions = {
-      customCss: `
-        .swagger-ui .topbar { display: none }
-        .swagger-ui { background: #fafafa; }
-      `,
-      customSiteTitle: 'Auction API Documentation',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-      },
-    };
+  // private initializeSwagger(): void {
+  //   const swaggerUiOptions = {
+  //     customCss: `
+  //       .swagger-ui .topbar { display: none }
+  //       .swagger-ui { background: #fafafa; }
+  //     `,
+  //     customSiteTitle: 'Auction API Documentation',
+  //     swaggerOptions: {
+  //       persistAuthorization: true,
+  //       displayRequestDuration: true,
+  //       filter: true,
+  //     },
+  //   };
 
-    this.app.get('/api-docs.json', (req: Request, res: Response) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(swaggerSpec);
-    });
+  //   this.app.get('/api-docs.json', (req: Request, res: Response) => {
+  //     res.setHeader('Content-Type', 'application/json');
+  //     res.send(swaggerSpec);
+  //   });
 
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-  }
+  //   this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+  // }
 
   private initializeRoutes(): void {
     this.app.use('/api', routes);
