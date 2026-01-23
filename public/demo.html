@@ -359,11 +359,20 @@ Round <span id="currentRoundNum">1</span> / <span id="totalRoundsNum">4</span>
 <button class="modal-close" data-modal-close="createAuctionModal">x</button>
 </div>
 <form id="createAuctionForm">
-<input type="text" id="auctionName" placeholder="Auction Name" required>
-<div class="grid-2"><input type="number" id="totalItems" placeholder="Total Items" value="200" required><input type="number" id="itemsPerRound" placeholder="Per Round" value="50" required></div>
-<div class="grid-2"><input type="number" id="roundDuration" placeholder="Duration (sec)" value="600" required><input type="number" id="minBid" placeholder="Min Bid" value="100" required></div>
-<div class="grid-2"><input type="number" id="minBidStep" placeholder="Min Step %" value="5" required><input type="number" id="startDelay" placeholder="Start in (sec)" value="30" required></div>
-<button type="submit" class="btn btn-primary" style="width:100%;">Create</button>
+  <input type="text" id="auctionName" placeholder="Auction Name" required>
+  <div class="grid-2">
+    <input type="number" id="totalItems" placeholder="Total Items" required>
+    <input type="number" id="itemsPerRound" placeholder="Per Round" required>
+  </div>
+  <div class="grid-2">
+    <input type="number" id="roundDuration" placeholder="Duration (sec)" required>
+    <input type="number" id="minBid" placeholder="Min Bid" required>
+  </div>
+  <div class="grid-2">
+    <input type="number" id="minBidStep" placeholder="Min Step %" required>
+    <input type="number" id="startDelay" placeholder="Start in (sec)" required>
+  </div>
+  <button type="submit" class="btn btn-primary" style="width:100%;">Create</button>
 </form>
 </div>
 </div>
@@ -525,22 +534,42 @@ async function loadAuctionData(auctionId) {
 	renderLiveAuction(); refreshLeaderboard(); startTimer();
 }
 function renderLiveAuction() {
-	document.getElementById('noAuctionSelected').classList.add('hidden');
-	document.getElementById('liveAuctionView').classList.remove('hidden');
-	document.getElementById('liveAuctionName').textContent = currentAuction.name;
-	document.getElementById('liveAuctionStatus').innerHTML = `<span class="status-badge status-${currentAuction.status}">${currentAuction.status}</span>`;
-	document.getElementById('currentRoundNum').textContent = currentAuction.currentRound || 1;
-	document.getElementById('totalRoundsNum').textContent = currentAuction.totalRounds;
-	document.getElementById('minBidDisplay').textContent = currentAuction.minBid;
-	document.getElementById('minStepDisplay').textContent = currentAuction.minBidStep;
-	if (currentRound) {
-		document.getElementById('itemsThisRound').textContent = currentRound.itemsInRound;
-		document.getElementById('cutoffPosition').textContent = currentRound.itemsInRound;
-		if (currentRound.extensionsCount > 0) {
-			document.getElementById('extensionInfo').classList.remove('hidden');
-			document.getElementById('extensionCount').textContent = currentRound.extensionsCount;
-		}
-	}
+  document.getElementById('noAuctionSelected').classList.add('hidden');
+  document.getElementById('liveAuctionView').classList.remove('hidden');
+  document.getElementById('liveAuctionName').textContent = currentAuction.name;
+  document.getElementById('liveAuctionStatus').innerHTML = `<span class="status-badge status-${currentAuction.status}">${currentAuction.status}</span>`;
+  document.getElementById('currentRoundNum').textContent = currentAuction.currentRound || 1;
+  document.getElementById('totalRoundsNum').textContent = currentAuction.totalRounds;
+  document.getElementById('minBidDisplay').textContent = currentAuction.minBid;
+  document.getElementById('minStepDisplay').textContent = currentAuction.minBidStep;
+
+  if (currentAuction.status === 'scheduled' && currentAuction.startTime) {
+    const startTimerInterval = setInterval(() => {
+      const diff = Math.max(0, new Date(currentAuction.startTime).getTime() - Date.now());
+      if (diff === 0) {
+        clearInterval(startTimerInterval);
+        loadAuctionData(currentAuction._id);
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('timerDisplay').textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+    document.getElementById('extensionInfo').classList.add('hidden');
+  } else if (currentRound && currentRound.actualEndTime) {
+    if (currentRound.extensionsCount > 0) {
+      document.getElementById('extensionInfo').classList.remove('hidden');
+      document.getElementById('extensionCount').textContent = currentRound.extensionsCount;
+    } else {
+      document.getElementById('extensionInfo').classList.add('hidden');
+    }
+    document.getElementById('itemsThisRound').textContent = currentRound.itemsInRound;
+    document.getElementById('cutoffPosition').textContent = currentRound.itemsInRound;
+  } else {
+    document.getElementById('timerDisplay').textContent = '--:--:--';
+    document.getElementById('extensionInfo').classList.add('hidden');
+  }
 }
 async function placeBid() {
 	if (!currentAuction || !token) { alert('Please login and select an auction'); return; }
