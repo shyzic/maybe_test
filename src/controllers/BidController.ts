@@ -12,7 +12,7 @@ export class BidController {
     const { auctionId, amount } = req.body;
     
     const bid = await BidService.placeBid({
-      auctionId,
+      auctionId: new Types.ObjectId(auctionId),
       userId: req.userId!,
       amount,
     });
@@ -32,9 +32,8 @@ export class BidController {
     const { newAmount } = req.body;
     
     const bid = await BidService.increaseBid({
-      // Преобразуем строку в ObjectId
       bidId: new Types.ObjectId(req.params.id), 
-      userId: new Types.ObjectId(req.userId!), // Здесь тоже лучше преобразовать, если сервис ждет ObjectId
+      userId: new Types.ObjectId(req.userId!),
       newAmount,
     });
     
@@ -68,7 +67,7 @@ export class BidController {
     const result = await BidService.getUserBids(req.userId!, {
       page: page ? parseInt(page as string) : undefined,
       limit: limit ? parseInt(limit as string) : undefined,
-      auctionId: auctionId as any,
+      auctionId: auctionId ? new Types.ObjectId(auctionId as string) : undefined,
       status: status as any,
       currentRound: currentRound ? parseInt(currentRound as string) : undefined,
     });
@@ -90,7 +89,7 @@ export class BidController {
     const leaderboard = await BidService.getRoundLeaderboard(
       auctionId,
       parseInt(roundNumber),
-      req.userId
+      req.userId // может быть undefined если не авторизован
     );
     
     res.status(200).json({

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auction System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--bg: #000000;
+--bg-secondary: #0a0a0a;
+--card: #111111;
+--border: #222222;
+--border-light: #333333;
+--text: #ffffff;
+--text-secondary: #666666;
+--text-muted: #444444;
+--accent: #ffffff;
+--success: #4ade80;
+--danger: #f87171;
+--warning: #fbbf24;
+}
+body {
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+background: var(--bg);
+color: var(--text);
+min-height: 100vh;
+font-size: 14px;
+line-height: 1.5;
+-webkit-font-smoothing: antialiased;
+}
+.container {
+max-width: 1400px;
+margin: 0 auto;
+padding: 24px;
+}
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 16px 0;
+border-bottom: 1px solid var(--border);
+margin-bottom: 32px;
+}
+.logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+.user-info { display: flex; align-items: center; gap: 16px; }
+.balance-box {
+padding: 8px 16px;
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 6px;
+}
+.balance-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+.balance-value { font-size: 16px; font-weight: 600; color: var(--success); }
+.btn {
+padding: 10px 20px;
+border: 1px solid var(--border);
+border-radius: 6px;
+background: transparent;
+color: var(--text);
+font-size: 13px;
+font-weight: 500;
+cursor: pointer;
+transition: all 0.15s ease;
+font-family: inherit;
+}
+.btn:hover { background: var(--card); border-color: var(--border-light); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { background: var(--text-secondary); border-color: var(--text-secondary); }
+.btn-success { background: var(--success); color: var(--bg); border-color: var(--success); }
+.btn-danger { background: var(--danger); color: var(--bg); border-color: var(--danger); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.card {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 20px;
+margin-bottom: 16px;
+}
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+input, select {
+width: 100%;
+padding: 12px 14px;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: 6px;
+color: var(--text);
+font-size: 14px;
+font-family: inherit;
+margin-bottom: 12px;
+transition: border-color 0.15s;
+}
+input:focus, select:focus { outline: none; border-color: var(--text-secondary); }
+input::placeholder { color: var(--text-muted); }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.tab {
+padding: 12px 20px;
+background: transparent;
+border: none;
+border-bottom: 2px solid transparent;
+color: var(--text-secondary);
+font-size: 13px;
+font-weight: 500;
+cursor: pointer;
+transition: all 0.15s;
+font-family: inherit;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--text); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.auction-card {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 20px;
+cursor: pointer;
+transition: all 0.15s;
+margin-bottom: 12px;
+}
+.auction-card:hover { border-color: var(--border-light); }
+.auction-name { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.auction-meta { display: flex; gap: 20px; font-size: 12px; color: var(--text-secondary); }
+.status-badge {
+display: inline-block;
+padding: 4px 10px;
+border-radius: 4px;
+font-size: 10px;
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+.status-active { background: var(--success); color: var(--bg); }
+.status-scheduled { background: var(--warning); color: var(--bg); }
+.status-completed { background: var(--text-secondary); color: var(--bg); }
+.timer-box { text-align: center; padding: 32px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.timer-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.timer-value { font-size: 48px; font-weight: 700; font-family: 'Inter', monospace; letter-spacing: -2px; }
+.extension-info { margin-top: 12px; font-size: 12px; color: var(--warning); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.stat-value { font-size: 24px; font-weight: 700; }
+.stat-value.success { color: var(--success); }
+.stat-value.danger { color: var(--danger); }
+.stat-value.warning { color: var(--warning); }
+.leaderboard { max-height: 500px; overflow-y: auto; }
+.leaderboard-header { display: flex; padding: 8px 16px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+.leaderboard-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.leaderboard-item:last-child { border-bottom: none; }
+.leaderboard-item.winning { background: rgba(74, 222, 128, 0.05); }
+.leaderboard-item.losing { background: rgba(248, 113, 113, 0.03); }
+.leaderboard-item.current-user { border-left: 2px solid var(--text); }
+.position { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 12px; font-weight: 600; margin-right: 12px; background: var(--border); }
+.position.top-3 { background: var(--text); color: var(--bg); }
+.position.winning { background: var(--success); color: var(--bg); }
+.position.losing { background: var(--border); color: var(--text-secondary); }
+.bid-info { flex: 1; }
+.bidder-name { font-weight: 500; font-size: 13px; }
+.bid-amount { font-size: 14px; font-weight: 600; font-family: 'Inter', monospace; }
+.bid-amount.winning { color: var(--success); }
+.bid-amount.losing { color: var(--danger); }
+.activity-feed { max-height: 400px; overflow-y: auto; }
+.activity-item { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.activity-icon { width: 6px; height: 6px; border-radius: 50%; margin-right: 10px; margin-top: 5px; flex-shrink: 0; }
+.activity-icon.bid { background: var(--text); }
+.activity-icon.increase { background: var(--warning); }
+.activity-icon.system { background: var(--success); }
+.activity-text { flex: 1; color: var(--text-secondary); }
+.activity-text strong { color: var(--text); font-weight: 500; }
+.activity-time { font-size: 10px; color: var(--text-muted); }
+.simulator-panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+.simulator-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.simulator-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; }
+.simulator-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.control-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.bot-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; background: var(--bg); border-radius: 6px; margin-bottom: 16px; }
+.bot-stat { text-align: center; }
+.bot-stat-value { font-size: 20px; font-weight: 700; }
+.bot-stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+.sim-log { max-height: 200px; overflow-y: auto; background: var(--bg); padding: 12px; border-radius: 6px; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; font-size: 11px; color: var(--text-secondary); }
+.sim-log div { padding: 2px 0; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; max-width: 420px; width: 90%; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px; }
+.modal-close:hover { color: var(--text); }
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+@media (max-width: 768px) { .grid-2, .grid-4, .stats-grid, .simulator-controls, .bot-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .grid-2, .grid-4, .stats-grid, .simulator-controls, .bot-stats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="logo">Auction System</div>
+<div class="user-info" id="userPanel">
+<div class="balance-box" id="balanceBox" style="display:none;">
+<div class="balance-label">Available</div>
+<div class="balance-value" id="balanceValue">0</div>
+</div>
+<span id="userName" style="font-size:13px; color:var(--text-secondary);"></span>
+<button class="btn btn-sm" id="depositBtn" style="display:none;">Deposit</button>
+<button class="btn btn-sm" id="logoutBtn" style="display:none;">Logout</button>
+<button class="btn btn-sm btn-primary" id="loginBtn">Login</button>
+<button class="btn btn-sm" id="registerBtn">Register</button>
+</div>
+</header>
+
+<div id="authSection" class="hidden">
+<div class="card" style="max-width: 360px; margin: 60px auto;">
+<h2 id="authTitle" style="font-size:20px; font-weight:600; margin-bottom:24px;">Login</h2>
+<form id="authForm">
+<input type="text" id="authUsername" placeholder="Username" required>
+<input type="password" id="authPassword" placeholder="Password" required>
+<input type="email" id="authEmail" placeholder="Email (optional)" class="hidden">
+<button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">Continue</button>
+</form>
+<p style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-secondary);">
+<span id="authToggleText">No account?</span>
+<a href="#" id="authToggle" style="color:var(--text); text-decoration:underline; margin-left:4px;">Register</a>
+</p>
+</div>
+</div>
+
+<div id="mainContent">
+<div class="tabs">
+<button class="tab active" data-tab="auctions">Auctions</button>
+<button class="tab" data-tab="live">Live</button>
+<button class="tab" data-tab="simulator">Simulator</button>
+<button class="tab" data-tab="mybids">My Bids</button>
+</div>
+
+<div id="auctionsTab" class="tab-content">
+<div class="card-header">
+<span class="card-title">Active Auctions</span>
+<button class="btn btn-sm btn-primary" id="createAuctionBtn">Create Auction</button>
+</div>
+<div id="auctionsList"></div>
+</div>
+
+<div id="liveTab" class="tab-content hidden">
+<div id="noAuctionSelected" class="card" style="text-align:center; padding:60px;">
+<p style="color:var(--text-secondary);">Select an auction to view live updates</p>
+</div>
+<div id="liveAuctionView" class="hidden">
+<!-- ... остальной контент без изменений -->
+<div class="card" style="margin-bottom:24px;">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<div>
+<div id="liveAuctionStatus" style="margin-bottom:8px;"></div>
+<h2 id="liveAuctionName" style="font-size:20px; font-weight:600;"></h2>
+</div>
+<div style="text-align:right; font-size:12px; color:var(--text-secondary);">
+Round <span id="currentRoundNum">1</span> / <span id="totalRoundsNum">4</span>
+</div>
+</div>
+</div>
+<div class="grid-2" style="margin-bottom:24px;">
+<div class="timer-box">
+<div class="timer-label">Time Remaining</div>
+<div class="timer-value" id="timerDisplay">00:00:00</div>
+<div id="extensionInfo" class="extension-info hidden">Extended <span id="extensionCount">0</span> times</div>
+</div>
+<div class="card" style="margin-bottom:0;">
+<div class="card-title" style="margin-bottom:16px;">Your Position</div>
+<div style="font-size:40px; font-weight:700; margin-bottom:4px;" id="userPosition">-</div>
+<div style="font-size:12px; color:var(--text-secondary);" id="userPositionStatus">Not participating</div>
+<div style="margin-top:20px;">
+<div style="display:flex; gap:8px;">
+<input type="number" id="bidAmount" placeholder="Bid amount" style="flex:1; margin-bottom:0;">
+<button class="btn btn-primary" id="placeBidBtn">Bid</button>
+</div>
+<p style="font-size:10px; color:var(--text-muted); margin-top:8px;">Min: <span id="minBidDisplay">100</span> / Step: <span id="minStepDisplay">5</span>%</p>
+</div>
+</div>
+</div>
+<div class="stats-grid">
+<div class="stat-box"><div class="stat-label">Items This Round</div><div class="stat-value" id="itemsThisRound">50</div></div>
+<div class="stat-box"><div class="stat-label">Total Bids</div><div class="stat-value" id="totalBidsCount">0</div></div>
+<div class="stat-box"><div class="stat-label">Winning Zone</div><div class="stat-value success" id="winningBidsCount">0</div></div>
+<div class="stat-box"><div class="stat-label">Outside Zone</div><div class="stat-value danger" id="losingBidsCount">0</div></div>
+</div>
+<div class="stats-grid">
+<div class="stat-box"><div class="stat-label">Total Volume</div><div class="stat-value warning" id="totalAmountAll">0</div></div>
+<div class="stat-box"><div class="stat-label">Winning Volume</div><div class="stat-value success" id="winningAmountTotal">0</div></div>
+<div class="stat-box"><div class="stat-label">Min Winning</div><div class="stat-value" id="minWinningBid">0</div></div>
+<div class="stat-box"><div class="stat-label">Highest Bid</div><div class="stat-value" id="highestBid">0</div></div>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-header">
+<span class="card-title">Leaderboard</span>
+<span style="font-size:11px; color:var(--text-secondary);">Cutoff: #<span id="cutoffPosition">50</span></span>
+</div>
+<div class="leaderboard-header"><span style="width:44px;">#</span><span style="flex:1;">Bidder</span><span>Amount</span></div>
+<div class="leaderboard" id="leaderboard"></div>
+</div>
+<div class="card">
+<div class="card-header">
+<span class="card-title">Activity</span>
+<span style="font-size:11px; color:var(--success);">Live</span>
+</div>
+<div class="activity-feed" id="activityFeed"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="simulatorTab" class="tab-content hidden">
+<div class="simulator-panel">
+<div class="simulator-title">Bot Simulator</div>
+<p class="simulator-desc">Create bots to simulate auction activity. Bots are registered as regular users.</p>
+<div class="simulator-controls">
+<div><div class="control-label">Auction ID</div><input type="text" id="simAuctionId" placeholder="Paste auction ID" style="margin-bottom:0;"></div>
+<div><div class="control-label">Number of Bots</div><input type="number" id="simBotCount" value="10" min="1" max="50" style="margin-bottom:0;"></div>
+<div><div class="control-label">Frequency (ms)</div><input type="number" id="simFrequency" value="2000" min="500" style="margin-bottom:0;"></div>
+<div><div class="control-label">Bid Range</div><div style="display:flex; gap:4px;"><input type="number" id="simMinBid" value="100" style="width:50%; margin-bottom:0;"><input type="number" id="simMaxBid" value="1000" style="width:50%; margin-bottom:0;"></div></div>
+</div>
+<div style="display:flex; gap:8px; margin-bottom:20px;">
+<button class="btn btn-success" id="startSimBtn">Start</button>
+<button class="btn btn-danger" id="stopSimBtn" disabled>Stop</button>
+<button class="btn" id="createBotsBtn">Create Bots</button>
+</div>
+<div class="bot-stats">
+<div class="bot-stat"><div class="bot-stat-value" id="simBotsCreated">0</div><div class="bot-stat-label">Bots</div></div>
+<div class="bot-stat"><div class="bot-stat-value" id="simBidsPlaced">0</div><div class="bot-stat-label">Bids</div></div>
+<div class="bot-stat"><div class="bot-stat-value" id="simTotalAmount">0</div><div class="bot-stat-label">Volume</div></div>
+<div class="bot-stat"><div class="bot-stat-value" id="simErrors">0</div><div class="bot-stat-label">Errors</div></div>
+</div>
+<div class="sim-log" id="simLog"></div>
+</div>
+</div>
+
+<div id="mybidsTab" class="tab-content hidden">
+<div class="card">
+<div class="card-title" style="margin-bottom:16px;">My Active Bids</div>
+<div id="myBidsList"></div>
+</div>
+</div>
+
+</div>
+
+<!-- Modals -->
+<div id="createAuctionModal" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<span class="modal-title">Create Auction</span>
+<button class="modal-close" data-modal-close="createAuctionModal">x</button>
+</div>
+<form id="createAuctionForm">
+<input type="text" id="auctionName" placeholder="Auction Name" required>
+<div class="grid-2"><input type="number" id="totalItems" placeholder="Total Items" value="200" required><input type="number" id="itemsPerRound" placeholder="Per Round" value="50" required></div>
+<div class="grid-2"><input type="number" id="roundDuration" placeholder="Duration (sec)" value="600" required><input type="number" id="minBid" placeholder="Min Bid" value="100" required></div>
+<div class="grid-2"><input type="number" id="minBidStep" placeholder="Min Step %" value="5" required><input type="number" id="startDelay" placeholder="Start in (sec)" value="30" required></div>
+<button type="submit" class="btn btn-primary" style="width:100%;">Create</button>
+</form>
+</div>
+</div>
+
+<div id="depositModal" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<span class="modal-title">Deposit</span>
+<button class="modal-close" data-modal-close="depositModal">x</button>
+</div>
+<form id="depositForm">
+<input type="number" id="depositAmount" placeholder="Amount" value="5000" required>
+<button type="submit" class="btn btn-success" style="width:100%;">Deposit</button>
+</form>
+</div>
+</div>
+
+<script>
+// === CONFIGURATION ===
+const API_BASE = '/api';
+let token = localStorage.getItem('token');
+let currentUser = null;
+let currentAuction = null;
+let currentRound = null;
+let socket = null;
+let timerInterval = null;
+let simulationInterval = null;
+let bots = [];
+let simStats = { botsCreated: 0, bidsPlaced: 0, totalAmount: 0, errors: 0 };
+
+// === UTILS ===
+function formatNumber(n) { return n.toLocaleString(); }
+
+// === DOM ELEMENTS ===
+const elements = {
+	loginBtn: document.getElementById('loginBtn'),
+	registerBtn: document.getElementById('registerBtn'),
+	logoutBtn: document.getElementById('logoutBtn'),
+	depositBtn: document.getElementById('depositBtn'),
+	balanceBox: document.getElementById('balanceBox'),
+	balanceValue: document.getElementById('balanceValue'),
+	userName: document.getElementById('userName'),
+	authSection: document.getElementById('authSection'),
+	authTitle: document.getElementById('authTitle'),
+	authEmail: document.getElementById('authEmail'),
+	authToggleText: document.getElementById('authToggleText'),
+	authToggle: document.getElementById('authToggle'),
+	authForm: document.getElementById('authForm'),
+	authUsername: document.getElementById('authUsername'),
+	authPassword: document.getElementById('authPassword'),
+	createAuctionBtn: document.getElementById('createAuctionBtn'),
+	auctionsList: document.getElementById('auctionsList'),
+	tabs: document.querySelectorAll('.tab'),
+	tabContents: document.querySelectorAll('.tab-content'),
+	placeBidBtn: document.getElementById('placeBidBtn'),
+	bidAmount: document.getElementById('bidAmount'),
+	startSimBtn: document.getElementById('startSimBtn'),
+	stopSimBtn: document.getElementById('stopSimBtn'),
+	createBotsBtn: document.getElementById('createBotsBtn')
+};
+
+// === API ===
+async function api(endpoint, options = {}) {
+	const headers = { 'Content-Type': 'application/json' };
+	if (token) headers['Authorization'] = `Bearer ${token}`;
+	const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+	const data = await response.json();
+	if (!response.ok) throw new Error(data.error || 'API Error');
+	return data;
+}
+
+// === AUTH ===
+async function login(username, password) {
+	const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+	token = data.data.token; currentUser = data.data.user; localStorage.setItem('token', token);
+	updateUI(); connectWebSocket();
+}
+async function register(username, password, email) {
+	const data = await api('/auth/register', { method: 'POST', body: JSON.stringify({ username, password, email: email || undefined }) });
+	token = data.data.token; currentUser = data.data.user; localStorage.setItem('token', token);
+	updateUI(); connectWebSocket();
+}
+function logout() { 
+	token = null; currentUser = null; localStorage.removeItem('token'); 
+	if (socket) socket.disconnect(); updateUI(); 
+}
+
+// === UI ===
+function updateUI() {
+	const isLoggedIn = !!token && !!currentUser;
+	elements.loginBtn.style.display = isLoggedIn ? 'none' : 'inline-block';
+	elements.registerBtn.style.display = isLoggedIn ? 'none' : 'inline-block';
+	elements.logoutBtn.style.display = isLoggedIn ? 'inline-block' : 'none';
+	elements.depositBtn.style.display = isLoggedIn ? 'inline-block' : 'none';
+	elements.balanceBox.style.display = isLoggedIn ? 'block' : 'none';
+	elements.authSection.classList.add('hidden');
+	if (isLoggedIn) {
+		elements.userName.textContent = currentUser.username;
+		elements.balanceValue.textContent = formatNumber(currentUser.balance - currentUser.reservedBalance);
+	}
+}
+
+// === TABS ===
+function switchTab(tabName) {
+	document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+	document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+	document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+	document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+	if (tabName === 'mybids') loadMyBids();
+}
+
+// === MODALS ===
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// === AUCTIONS ===
+async function loadAuctions() { 
+	try { const data = await api('/auctions'); renderAuctions(data.data); } 
+	catch (e) { console.error(e); } 
+}
+function renderAuctions(auctions) {
+	const container = document.getElementById('auctionsList');
+	if (!auctions.length) {
+		container.innerHTML = '<p style="color:var(--text-secondary); padding:20px 0;">No auctions found</p>';
+		return;
+	}
+	container.innerHTML = auctions.map(a => `
+	<div class="auction-card" data-auction-id="${a._id}">
+		<div style="display:flex; justify-content:space-between; align-items:start;">
+			<div>
+				<span class="status-badge status-${a.status}">${a.status}</span>
+				<h3 class="auction-name">${a.name}</h3>
+				<div class="auction-meta">
+					<span>${a.totalItems} items</span>
+					<span>${a.totalRounds} rounds</span>
+					<span>Min: ${a.minBid}</span>
+				</div>
+			</div>
+			<div style="text-align:right; font-size:11px; color:var(--text-secondary);">
+				<div>Round ${a.currentRound || 0}/${a.totalRounds}</div>
+			</div>
+		</div>
+		<div style="margin-top:16px; display:flex; gap:8px;">
+			<button class="btn btn-sm btn-primary view-live-btn" data-auction-id="${a._id}">View Live</button>
+			<button class="btn btn-sm copy-id-btn" data-auction-id="${a._id}">Copy ID</button>
+		</div>
+	</div>`).join('');
+}
+
+// === LIVE VIEW ===
+async function selectAuction(auctionId) { 
+	try { await loadAuctionData(auctionId); switchTab('live'); } 
+	catch (e) { alert('Failed: ' + e.message); } 
+}
+async function loadAuctionData(auctionId) {
+	const auctionData = await api(`/auctions/${auctionId}`); currentAuction = auctionData.data;
+	if (socket && socket.connected) socket.emit('subscribe:auction', auctionId);
+	try { const roundData = await api(`/auctions/${auctionId}/current-round`); currentRound = roundData.data; } catch (e) { currentRound = null; }
+	renderLiveAuction(); refreshLeaderboard(); startTimer();
+}
+function renderLiveAuction() {
+	document.getElementById('noAuctionSelected').classList.add('hidden');
+	document.getElementById('liveAuctionView').classList.remove('hidden');
+	document.getElementById('liveAuctionName').textContent = currentAuction.name;
+	document.getElementById('liveAuctionStatus').innerHTML = `<span class="status-badge status-${currentAuction.status}">${currentAuction.status}</span>`;
+	document.getElementById('currentRoundNum').textContent = currentAuction.currentRound || 1;
+	document.getElementById('totalRoundsNum').textContent = currentAuction.totalRounds;
+	document.getElementById('minBidDisplay').textContent = currentAuction.minBid;
+	document.getElementById('minStepDisplay').textContent = currentAuction.minBidStep;
+	if (currentRound) {
+		document.getElementById('itemsThisRound').textContent = currentRound.itemsInRound;
+		document.getElementById('cutoffPosition').textContent = currentRound.itemsInRound;
+		if (currentRound.extensionsCount > 0) {
+			document.getElementById('extensionInfo').classList.remove('hidden');
+			document.getElementById('extensionCount').textContent = currentRound.extensionsCount;
+		}
+	}
+}
+async function placeBid() {
+	if (!currentAuction || !token) { alert('Please login and select an auction'); return; }
+	const amount = parseFloat(document.getElementById('bidAmount').value);
+	if (!amount || amount < currentAuction.minBid) { alert(`Minimum bid is ${currentAuction.minBid}`); return; }
+	try {
+		const myBids = await api('/bids/my-bids?status=active');
+		const existingBid = myBids.data.find(b => b.auctionId === currentAuction._id || b.auctionId?._id === currentAuction._id);
+		if (existingBid) {
+			await api(`/bids/${existingBid._id}`, { method: 'PUT', body: JSON.stringify({ newAmount: amount }) });
+		} else {
+			await api('/bids', { method: 'POST', body: JSON.stringify({ auctionId: currentAuction._id, amount }) });
+		}
+		document.getElementById('bidAmount').value = '';
+		await loadCurrentUser();
+		refreshLeaderboard();
+	} catch (e) { alert('Failed: ' + e.message); }
+}
+
+// === LEADERBOARD & ACTIVITY ===
+async function refreshLeaderboard() {
+	if (!currentAuction) return;
+	const roundNum = currentAuction.currentRound || 1;
+	try {
+		const data = await api(`/auctions/${currentAuction._id}/rounds/${roundNum}/leaderboard`);
+		renderLeaderboard(data.data);
+	} catch (e) { console.error(e); }
+}
+function renderLeaderboard(data) {
+	const container = document.getElementById('leaderboard');
+	const entries = data.entries || []; const cutoff = data.cutoffPosition || data.itemsInRound;
+	const winning = entries.filter((_, i) => i < cutoff); const losing = entries.filter((_, i) => i >= cutoff);
+	document.getElementById('totalBidsCount').textContent = entries.length;
+	document.getElementById('winningBidsCount').textContent = winning.length;
+	document.getElementById('losingBidsCount').textContent = losing.length;
+	const totalAll = entries.reduce((s, e) => s + e.amount, 0);
+	const totalWinning = winning.reduce((s, e) => s + e.amount, 0);
+	const highestBid = entries.length ? entries[0].amount : 0;
+	const minWinning = winning.length ? winning[winning.length - 1].amount : 0;
+	document.getElementById('totalAmountAll').textContent = formatNumber(totalAll);
+	document.getElementById('winningAmountTotal').textContent = formatNumber(totalWinning);
+	document.getElementById('highestBid').textContent = formatNumber(highestBid);
+	document.getElementById('minWinningBid').textContent = formatNumber(minWinning);
+	const userEntry = entries.find(e => e.isCurrentUser);
+	if (userEntry) {
+		document.getElementById('userPosition').textContent = '#' + userEntry.position;
+		const isWinning = userEntry.position <= cutoff;
+		document.getElementById('userPosition').style.color = isWinning ? 'var(--success)' : 'var(--danger)';
+		document.getElementById('userPositionStatus').textContent = isWinning ? 'In winning zone' : 'Outside zone';
+	} else {
+		document.getElementById('userPosition').textContent = '-';
+		document.getElementById('userPosition').style.color = 'var(--text-secondary)';
+		document.getElementById('userPositionStatus').textContent = 'Not participating';
+	}
+	container.innerHTML = entries.map((e, i) => {
+		const isWinning = i < cutoff; const isTop3 = i < 3; const isCurrent = e.isCurrentUser;
+		return `<div class="leaderboard-item ${isWinning ? 'winning' : 'losing'} ${isCurrent ? 'current-user' : ''}">
+			<div class="position ${isTop3 ? 'top-3' : (isWinning ? 'winning' : 'losing')}">${e.position}</div>
+			<div class="bid-info"><div class="bidder-name">${e.username}${isCurrent ? ' (You)' : ''}</div></div>
+			<div class="bid-amount ${isWinning ? 'winning' : 'losing'}">${formatNumber(e.amount)}</div>
+		</div>`;
+	}).join('');
+}
+function addActivity(type, text) {
+	const feed = document.getElementById('activityFeed');
+	const item = document.createElement('div');
+	item.className = 'activity-item';
+	item.innerHTML = `<div class="activity-icon ${type}"></div><div class="activity-text">${text}</div><div class="activity-time">${new Date().toLocaleTimeString()}</div>`;
+	feed.insertBefore(item, feed.firstChild);
+	while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+}
+
+// === TIMER ===
+function startTimer() {
+	if (timerInterval) clearInterval(timerInterval);
+	timerInterval = setInterval(() => {
+		if (!currentRound || !currentRound.actualEndTime) {
+			document.getElementById('timerDisplay').textContent = '--:--:--';
+			return;
+		}
+		const diff = Math.max(0, new Date(currentRound.actualEndTime).getTime() - Date.now());
+		const h = Math.floor(diff / 3600000);
+		const m = Math.floor((diff % 3600000) / 60000);
+		const s = Math.floor((diff % 60000) / 1000);
+		document.getElementById('timerDisplay').textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+		if (diff === 0) loadAuctionData(currentAuction._id);
+	}, 1000);
+}
+
+// === SIMULATOR ===
+async function createBots() {
+	const count = parseInt(document.getElementById('simBotCount').value);
+	bots = [];
+	for (let i = 1; i <= count; i++) {
+		try {
+			const username = `bot_${Date.now()}_${i}`;
+			const data = await api('/auth/register', { method: 'POST', body: JSON.stringify({ username, password: 'bot123456', initialBalance: 100000 }) });
+			bots.push({ id: i, username, token: data.data.token, balance: data.data.user.balance });
+			simStats.botsCreated++;
+			updateSimStats();
+			addSimLog(`+ Created: ${username}`);
+		} catch (e) {
+			simStats.errors++;
+			updateSimStats();
+			addSimLog(`x Failed bot ${i}`);
+		}
+	}
+	return bots;
+}
+async function startSimulation() {
+	const auctionId = document.getElementById('simAuctionId').value;
+	if (!auctionId) { alert('Enter auction ID'); return; }
+	if (!bots.length) await createBots();
+	const frequency = parseInt(document.getElementById('simFrequency').value);
+	const minBid = parseInt(document.getElementById('simMinBid').value);
+	const maxBid = parseInt(document.getElementById('simMaxBid').value);
+	document.getElementById('startSimBtn').disabled = true;
+	document.getElementById('stopSimBtn').disabled = false;
+	addSimLog('> Starting...');
+	simulationInterval = setInterval(async () => {
+		const bot = bots[Math.floor(Math.random() * bots.length)];
+		const amount = Math.floor(Math.random() * (maxBid - minBid + 1)) + minBid;
+		try {
+			const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${bot.token}` };
+			const myBidsRes = await fetch(`${API_BASE}/bids/my-bids?status=active`, { headers });
+			const myBidsData = await myBidsRes.json();
+			const existingBid = myBidsData.data?.find(b => b.auctionId === auctionId || b.auctionId?._id === auctionId);
+			if (existingBid) {
+				const newAmount = Math.ceil(existingBid.amount * 1.05) + Math.floor(Math.random() * 50);
+				await fetch(`${API_BASE}/bids/${existingBid._id}`, { method: 'PUT', headers, body: JSON.stringify({ newAmount }) });
+				simStats.bidsPlaced++;
+				simStats.totalAmount += (newAmount - existingBid.amount);
+				addSimLog(`^ ${bot.username} -> ${newAmount}`);
+			} else {
+				await fetch(`${API_BASE}/bids`, { method: 'POST', headers, body: JSON.stringify({ auctionId, amount }) });
+				simStats.bidsPlaced++;
+				simStats.totalAmount += amount;
+				addSimLog(`+ ${bot.username} bid ${amount}`);
+			}
+			updateSimStats();
+		} catch (e) {
+			simStats.errors++;
+			updateSimStats();
+		}
+	}, frequency);
+}
+function stopSimulation() {
+	if (simulationInterval) {
+		clearInterval(simulationInterval);
+		simulationInterval = null;
+	}
+	document.getElementById('startSimBtn').disabled = false;
+	document.getElementById('stopSimBtn').disabled = true;
+	addSimLog('> Stopped');
+}
+function updateSimStats() {
+	document.getElementById('simBotsCreated').textContent = simStats.botsCreated;
+	document.getElementById('simBidsPlaced').textContent = simStats.bidsPlaced;
+	document.getElementById('simTotalAmount').textContent = formatNumber(simStats.totalAmount);
+	document.getElementById('simErrors').textContent = simStats.errors;
+}
+function addSimLog(msg) {
+	const log = document.getElementById('simLog');
+	log.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + log.innerHTML;
+}
+
+// === FORMS ===
+async function createAuction(e) {
+	e.preventDefault();
+	const startTime = new Date(Date.now() + parseInt(document.getElementById('startDelay').value) * 1000);
+	try {
+		const data = await api('/auctions', {
+			method: 'POST',
+			body: JSON.stringify({
+				name: document.getElementById('auctionName').value,
+				totalItems: parseInt(document.getElementById('totalItems').value),
+				itemsPerRound: parseInt(document.getElementById('itemsPerRound').value),
+				roundDuration: parseInt(document.getElementById('roundDuration').value),
+				minBid: parseInt(document.getElementById('minBid').value),
+				minBidStep: parseInt(document.getElementById('minBidStep').value),
+				startTime: startTime.toISOString(),
+				antiSnipeWindow: 60,
+				antiSnipeExtension: 60,
+				maxExtensions: 10,
+				currency: 'STARS'
+			})
+		});
+		closeModal('createAuctionModal');
+		loadAuctions();
+		alert('Created! ID: ' + data.data._id);
+	} catch (e) { alert('Failed: ' + e.message); }
+}
+async function deposit(e) {
+	e.preventDefault();
+	try {
+		await api('/users/me/deposit', { method: 'POST', body: JSON.stringify({ amount: parseInt(document.getElementById('depositAmount').value) }) });
+		closeModal('depositModal');
+		await loadCurrentUser();
+	} catch (e) { alert('Failed: ' + e.message); }
+}
+async function loadMyBids() {
+	if (!token) return;
+	try {
+		const data = await api('/bids/my-bids');
+		const container = document.getElementById('myBidsList');
+		if (!data.data.length) {
+			container.innerHTML = '<p style="color:var(--text-secondary);">No bids yet</p>';
+			return;
+		}
+		container.innerHTML = data.data.map(b => `
+			<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+				<div>
+					<span class="status-badge status-${b.status}" style="margin-right:8px;">${b.status}</span>
+					<span style="font-size:13px;">${b.auctionId?.name || b.auctionId}</span>
+				</div>
+				<div style="text-align:right;">
+					<div style="font-size:16px; font-weight:600;">${formatNumber(b.amount)}</div>
+					<div style="font-size:11px; color:var(--text-secondary);">Round ${b.currentRound}</div>
+				</div>
+			</div>`).join('');
+	} catch (e) { console.error(e); }
+}
+
+// === WEBSOCKET ===
+async function loadCurrentUser() {
+	if (!token) return;
+	try {
+		const data = await api('/users/me');
+		currentUser = data.data;
+		updateUI();
+		connectWebSocket();
+	} catch (e) { logout(); }
+}
+function connectWebSocket() {
+	if (!token) return;
+	socket = io(window.location.origin, { auth: { token } });
+	socket.on('connect', () => {
+		if (currentAuction) socket.emit('subscribe:auction', currentAuction._id);
+	});
+	socket.on('bid:placed', (data) => {
+		addActivity('bid', `<strong>${data.username}</strong> placed bid: ${formatNumber(data.amount)}`);
+		refreshLeaderboard();
+	});
+	socket.on('bid:increased', (data) => {
+		addActivity('increase', `<strong>${data.username}</strong> raised to ${formatNumber(data.newAmount)}`);
+		refreshLeaderboard();
+	});
+	socket.on('round:extended', (data) => {
+		addActivity('system', `Round extended (${data.extensionsCount}x)`);
+		document.getElementById('extensionInfo').classList.remove('hidden');
+		document.getElementById('extensionCount').textContent = data.extensionsCount;
+		if (currentRound) currentRound.actualEndTime = data.newEndTime;
+	});
+	socket.on('round:completed', (data) => {
+		addActivity('system', `Round ${data.roundNumber} completed`);
+		loadAuctionData(currentAuction._id);
+	});
+	socket.on('leaderboard:updated', () => refreshLeaderboard());
+	socket.on('user:won', (data) => { alert(`You won item #${data.itemNumber}!`); });
+}
+
+// === EVENT LISTENERS ===
+document.addEventListener('DOMContentLoaded', async () => {
+	// Auth toggles
+	elements.loginBtn.addEventListener('click', () => {
+		elements.authTitle.textContent = 'Login';
+		elements.authEmail.classList.add('hidden');
+		elements.authSection.classList.remove('hidden');
+	});
+	elements.registerBtn.addEventListener('click', () => {
+		elements.authTitle.textContent = 'Register';
+		elements.authEmail.classList.remove('hidden');
+		elements.authSection.classList.remove('hidden');
+	});
+	elements.authToggle.addEventListener('click', (e) => {
+		e.preventDefault();
+		const isLogin = elements.authTitle.textContent === 'Login';
+		elements.authTitle.textContent = isLogin ? 'Register' : 'Login';
+		elements.authEmail.classList.toggle('hidden', !isLogin);
+		elements.authToggleText.textContent = isLogin ? 'Have account?' : 'No account?';
+		elements.authToggle.textContent = isLogin ? 'Login' : 'Register';
+	});
+	elements.authForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const u = elements.authUsername.value;
+		const p = elements.authPassword.value;
+		const em = elements.authEmail.value;
+		try {
+			if (elements.authTitle.textContent === 'Login') await login(u, p);
+			else await register(u, p, em);
+		} catch (e) { alert('Auth failed: ' + e.message); }
+	});
+
+	// Main buttons
+	elements.logoutBtn.addEventListener('click', logout);
+	elements.depositBtn.addEventListener('click', () => openModal('depositModal'));
+	elements.createAuctionBtn.addEventListener('click', () => openModal('createAuctionModal'));
+
+	// Forms
+	document.getElementById('createAuctionForm').addEventListener('submit', createAuction);
+	document.getElementById('depositForm').addEventListener('submit', deposit);
+	elements.placeBidBtn.addEventListener('click', placeBid);
+
+	// Simulator
+	elements.startSimBtn.addEventListener('click', startSimulation);
+	elements.stopSimBtn.addEventListener('click', stopSimulation);
+	elements.createBotsBtn.addEventListener('click', createBots);
+
+	// Tabs
+	elements.tabs.forEach(tab => {
+		tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+	});
+
+	// Modal close via [data-modal-close]
+	document.querySelectorAll('[data-modal-close]').forEach(btn => {
+		btn.addEventListener('click', (e) => {
+			const modalId = e.target.dataset.modalClose;
+			closeModal(modalId);
+		});
+	});
+
+	// Modal backdrop close
+	document.querySelectorAll('.modal').forEach(modal => {
+		modal.addEventListener('click', (e) => {
+			if (e.target === modal) modal.classList.add('hidden');
+		});
+	});
+
+	// Auction list delegation
+	elements.auctionsList.addEventListener('click', (e) => {
+		const card = e.target.closest('.auction-card');
+		const viewBtn = e.target.closest('.view-live-btn');
+		const copyBtn = e.target.closest('.copy-id-btn');
+
+		if (card && !viewBtn && !copyBtn) {
+			const auctionId = card.dataset.auctionId;
+			selectAuction(auctionId);
+		} else if (viewBtn) {
+			const auctionId = viewBtn.dataset.auctionId;
+			selectAuction(auctionId);
+		} else if (copyBtn) {
+			const auctionId = copyBtn.dataset.auctionId;
+			navigator.clipboard.writeText(auctionId).then(() => alert('Copied!'));
+		}
+	});
+
+	// Init
+	await loadCurrentUser();
+	await loadAuctions();
+});
+</script>
+</body>
+</html>

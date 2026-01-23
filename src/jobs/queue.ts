@@ -14,19 +14,19 @@ export const notificationQueue = new Queue('notifications', { connection: connec
 const roundQueueEvents = new QueueEvents('rounds', { connection: connection as any });
 const auctionQueueEvents = new QueueEvents('auctions', { connection: connection as any });
 
-roundQueueEvents.on('completed', ({ jobId }) => {
+roundQueueEvents.on('completed', ({ jobId }: { jobId: string }) => {
   logger.info(`Round job ${jobId} completed`);
 });
 
-roundQueueEvents.on('failed', ({ jobId, failedReason }) => {
+roundQueueEvents.on('failed', ({ jobId, failedReason }: { jobId: string; failedReason: string }) => {
   logger.error(`Round job ${jobId} failed: ${failedReason}`);
 });
 
-auctionQueueEvents.on('completed', ({ jobId }) => {
+auctionQueueEvents.on('completed', ({ jobId }: { jobId: string }) => {
   logger.info(`Auction job ${jobId} completed`);
 });
 
-auctionQueueEvents.on('failed', ({ jobId, failedReason }) => {
+auctionQueueEvents.on('failed', ({ jobId, failedReason }: { jobId: string; failedReason: string }) => {
   logger.error(`Auction job ${jobId} failed: ${failedReason}`);
 });
 

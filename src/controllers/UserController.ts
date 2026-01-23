@@ -1,9 +1,33 @@
 import { Request, Response } from 'express';
 import UserService from '../services/UserService';
 import TransactionService from '../services/TransactionService';
+import WonItem from '../models/WonItem';
 import { asyncHandler } from '../middleware/errorHandler';
 
 export class UserController {
+  /**
+   * Получение текущего пользователя
+   * GET /api/users/me
+   */
+  getMe = asyncHandler(async (req: Request, res: Response) => {
+    const user = await UserService.getUserById(req.userId!);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        balance: user.balance,
+        reservedBalance: user.reservedBalance,
+        availableBalance: user.getAvailableBalance(),
+        totalBids: user.totalBids,
+        totalWins: user.totalWins,
+        totalSpent: user.totalSpent,
+      },
+    });
+  });
+
   /**
    * Получение профиля пользователя
    * GET /api/users/:id
@@ -129,6 +153,39 @@ export class UserController {
       success: true,
       data: result.data,
       pagination: result.pagination,
+    });
+  });
+
+  /**
+   * Получение выигрышей пользователя
+   * GET /api/users/me/wins
+   */
+  getMyWins = asyncHandler(async (req: Request, res: Response) => {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    const [wins, total] = await Promise.all([
+      WonItem.find({ userId: req.userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate('auctionId', 'name currency'),
+      WonItem.countDocuments({ userId: req.userId }),
+    ]);
+    
+    const totalPages = Math.ceil(total / Number(limit));
+    
+    res.status(200).json({
+      success: true,
+      data: wins,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages,
+        hasNext: Number(page) < totalPages,
+        hasPrev: Number(page) > 1,
+      },
     });
   });
 

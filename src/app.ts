@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import { connectDatabase } from './config/database';
@@ -27,11 +28,11 @@ class App {
         contentSecurityPolicy: {
           directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.socket.io"],
             imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
             connectSrc: ["'self'", 'ws:', 'wss:'],
-            fontSrc: ["'self'", 'data:'],
+            fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
           },
         },
       })
@@ -61,17 +62,27 @@ class App {
         message: 'Auction Backend API',
         version: '1.0.0',
         timestamp: new Date().toISOString(),
+        endpoints: {
+          demo: '/demo',
+          api: '/api',
+          health: '/api/health'
+        }
       });
     });
 
-    // Serve static files LAST (after all API routes)
-    this.app.use(express.static('public', {
-      setHeaders: (res, path) => {
-        if (path.endsWith('.js')) {
+    // Demo page route - serves the frontend
+    this.app.get('/demo', (req: Request, res: Response) => {
+      res.sendFile(path.join(__dirname, '../public/demo.html'));
+    });
+
+    // Serve static files
+    this.app.use(express.static(path.join(__dirname, '../public'), {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
           res.setHeader('Content-Type', 'application/javascript');
-        } else if (path.endsWith('.css')) {
+        } else if (filePath.endsWith('.css')) {
           res.setHeader('Content-Type', 'text/css');
-        } else if (path.endsWith('.html')) {
+        } else if (filePath.endsWith('.html')) {
           res.setHeader('Content-Type', 'text/html');
         }
       }
@@ -97,7 +108,7 @@ class App {
       initializeWebSocket(this.httpServer);
       logger.info('WebSocket server initialized');
 
-      // Запуск workers и планировщиков
+      // Запуск workers и планировщиков (опционально)
       // startWorkers();
       // logger.info('Workers and schedulers started');
 
@@ -106,7 +117,7 @@ class App {
         logger.info(`Server is running on port ${env.port}`);
         logger.info(`Environment: ${env.nodeEnv}`);
         logger.info(`API available at http://localhost:${env.port}/api`);
-        logger.info(`Frontend UI at http://localhost:${env.port}/index.html`);
+        logger.info(`Demo UI at http://localhost:${env.port}/demo`);
         logger.info(`WebSocket available at ws://localhost:${env.port}`);
       });
 

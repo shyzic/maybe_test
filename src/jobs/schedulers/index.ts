@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import RoundService from '../../services/RoundService';
 import AuctionService from '../../services/AuctionService';
 import logger from '../../utils/logger';

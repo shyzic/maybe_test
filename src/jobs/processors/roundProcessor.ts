@@ -9,10 +9,15 @@ import { scheduleRoundEnd } from '../queue';
 // Используем единое соединение
 const connection = getRedisConnection();
 
+interface RoundJobData {
+  roundId: string;
+  auctionId: string;
+}
+
 /**
  * Обработка задачи запуска раунда
  */
-const processRoundStart = async (job: Job) => {
+const processRoundStart = async (job: Job<RoundJobData>) => {
   const { roundId, auctionId } = job.data;
   
   try {
@@ -48,7 +53,7 @@ const processRoundStart = async (job: Job) => {
 /**
  * Обработка задачи завершения раунда
  */
-const processRoundEnd = async (job: Job) => {
+const processRoundEnd = async (job: Job<RoundJobData>) => {
   const { roundId, auctionId } = job.data;
   
   try {
@@ -77,9 +82,9 @@ const processRoundEnd = async (job: Job) => {
 /**
  * Worker для обработки задач раундов
  */
-export const roundWorker = new Worker(
+export const roundWorker = new Worker<RoundJobData>(
   'rounds',
-  async (job: Job) => {
+  async (job: Job<RoundJobData>) => {
     switch (job.name) {
       case 'start-round':
         await processRoundStart(job);
@@ -101,11 +106,11 @@ export const roundWorker = new Worker(
   }
 );
 
-roundWorker.on('completed', (job) => {
+roundWorker.on('completed', (job: Job<RoundJobData>) => {
   logger.info(`Round job ${job.id} completed`);
 });
 
-roundWorker.on('failed', (job, err) => {
+roundWorker.on('failed', (job: Job<RoundJobData> | undefined, err: Error) => {
   logger.error(`Round job ${job?.id} failed:`, err);
 });
 
