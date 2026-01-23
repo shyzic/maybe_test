@@ -1,24 +1,24 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
-import userRoutes from './user.routes';
 import auctionRoutes from './auction.routes';
 import bidRoutes from './bid.routes';
+import userRoutes from './user.routes';
 
 const router = Router();
 
-// API Routes
-router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
-router.use('/auctions', auctionRoutes);
-router.use('/bids', bidRoutes);
-
-// Health check
+// Health check endpoint
 router.get('/health', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
-    message: 'API is running',
+    message: 'Auction API is running',
     timestamp: new Date().toISOString(),
   });
 });
+
+// Mount routes
+router.use('/auth', authRoutes);
+router.use('/auctions', auctionRoutes);
+router.use('/bids', bidRoutes);
+router.use('/users', userRoutes);
 
 export default router;

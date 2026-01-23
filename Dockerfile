@@ -7,8 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (use npm install instead of npm ci for flexibility)
+RUN npm install
 
 # Copy source code
 COPY src ./src
@@ -25,11 +25,12 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --production
+RUN npm install --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy public folder for frontend
 COPY public ./public
 
 # Create non-root user
@@ -37,8 +38,7 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Change ownership
-RUN chown -R nodejs:nodejs /app && \
-    chmod -R 755 /app/public
+RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
