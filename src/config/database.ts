@@ -8,7 +8,6 @@ export async function connectDatabase(): Promise<void> {
     
     logger.info('MongoDB connected successfully');
     
-    // Обработка событий подключения
     mongoose.connection.on('error', (error) => {
       logger.error('MongoDB connection error:', error);
     });
@@ -17,7 +16,6 @@ export async function connectDatabase(): Promise<void> {
       logger.warn('MongoDB disconnected');
     });
     
-    // Graceful shutdown
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
       logger.info('MongoDB connection closed through app termination');

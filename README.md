@@ -206,23 +206,7 @@ User Places Bid
 - Redis 7
 ```
 
-### 1. Clone & Setup
-
-```bash
-# Clone repository
-git clone <your-repo-url>
-cd auction-backend
-
-# Run cleanup script (prepares project)
-chmod +x /mnt/user-data/outputs/cleanup.sh
-./cleanup.sh
-
-# Copy final files
-cp /mnt/user-data/outputs/final-index.html public/index.html
-cp /mnt/user-data/outputs/fixed-docker-compose.yml docker-compose.yml
-```
-
-### 2. Docker Deployment (Recommended)
+### 1. Docker Deployment (Recommended)
 
 ```bash
 # Build and start all services
@@ -241,11 +225,11 @@ docker-compose logs backend | tail -20
 ```
 
 **Access:**
-- Web UI: http://localhost:3000
+- Web Demo: http://localhost:3000/demo
 - API: http://localhost:3000/api
 - Health: http://localhost:3000/api/health
 
-### 3. Local Development
+### 2. Local Development
 
 ```bash
 # Install dependencies
@@ -700,51 +684,6 @@ PORT=3001
 2. CORS settings in `src/app.ts`
 3. Token valid: Check JWT expiration
 4. Network settings: Check firewall
-
----
-
-## 🎬 Demo Video Structure
-
-**Recommended flow for competition submission:**
-
-1. **System Start** (0:00-0:30)
-   - Show `docker-compose up`
-   - Show healthy services
-   - Open http://localhost:3000
-
-2. **User Registration** (0:30-1:00)
-   - Register as user1
-   - Show balance: 10,000 STARS
-
-3. **Auction Creation** (1:00-1:30)
-   - Login as admin
-   - Click "Quick Create"
-   - Show: 200 items, 4 rounds, starts in 30s
-
-4. **Simulation Demo** (1:30-3:00)
-   - Select "Basic Demo" preset
-   - Show 10 bots created
-   - Start simulation
-   - Show real-time stats
-   - Show activity feed
-
-5. **Live Leaderboard** (3:00-4:00)
-   - Switch to "Live Auction" tab
-   - Show real-time position updates
-   - Show winning positions (green)
-   - Show bid amounts updating
-
-6. **Anti-Snipe Test** (4:00-5:00)
-   - Change to "Anti-Snipe Test" preset
-   - Show round extension happening
-   - Show extension counter
-
-7. **Winner Announcement** (5:00-5:30)
-   - Show round completion
-   - Show winners list
-   - Show balance updates
-
-**Total: 5-6 minutes**
 
 ---
 
